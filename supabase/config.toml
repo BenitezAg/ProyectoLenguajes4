@@ -1,0 +1,4 @@
+project_id = "proyecto-lenguajes-4"
+
+[functions.notify-contact]
+verify_jwt = false

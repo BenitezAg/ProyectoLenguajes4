@@ -1,0 +1,24 @@
+{
+  "name": "proyecto-lenguajes-4",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Portfolio full stack en React, Supabase y esbuild.",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "node scripts/dev.mjs",
+    "format:css": "node scripts/format-css.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "bootstrap": "^5.3.8",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "postcss": "^8.5.32"
+  }
+}

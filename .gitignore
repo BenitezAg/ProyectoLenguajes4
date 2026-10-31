@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+Instrucciones Trabajo Final Integrador para regularizar y aprobar 2026.pdf
+Portafolio con animaciones y transiciones (1).html
