@@ -1,10 +1,19 @@
 import { useState } from "react";
+import { teamInfo, teamMembers } from "../../data/portfolio.js";
 import { formatDate } from "../../utils/records.js";
+import MessageConversation from "../MessageConversation.jsx";
 
-export default function MessagesManager({ portfolio, setMessageStatus, setNotice }) {
+export default function MessagesManager({
+  portfolio,
+  setMessageStatus,
+  replyToMessage,
+  setNotice,
+}) {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [subjectFilter, setSubjectFilter] = useState("todos");
   const [search, setSearch] = useState("");
+  const [drafts, setDrafts] = useState({});
+  const [sendingId, setSendingId] = useState("");
 
   const filtered = portfolio.messages.filter((msg) => {
     if (statusFilter !== "todos" && msg.status !== statusFilter) return false;
@@ -27,6 +36,27 @@ export default function MessagesManager({ portfolio, setMessageStatus, setNotice
     } catch (err) {
       console.error("Error actualizando consulta:", err);
       setNotice("No se pudo actualizar el estado en Supabase.");
+    }
+  }
+
+  async function handleReply(message) {
+    const body = (drafts[message.id] ?? "").trim();
+    if (!body) return;
+
+    setSendingId(message.id);
+    try {
+      const result = await replyToMessage(message.id, body);
+      setDrafts((current) => ({ ...current, [message.id]: "" }));
+      setNotice(
+        result.emailSent
+          ? `Respuesta enviada por email a ${message.email}.`
+          : `Respuesta guardada en la conversación de ${message.name}; revisa la configuración de correo para enviar avisos.`,
+      );
+    } catch (err) {
+      console.error("Error guardando respuesta:", err);
+      setNotice("No se pudo guardar la respuesta en Supabase.");
+    } finally {
+      setSendingId("");
     }
   }
 
@@ -92,7 +122,7 @@ export default function MessagesManager({ portfolio, setMessageStatus, setNotice
                 </div>
                 <a
                   className="btn btn-outline-custom btn-sm"
-                  href={`mailto:${encodeURIComponent(msg.email)}?subject=${encodeURIComponent(`Re: [${msg.subject}] Respuesta de Equipo Fullstack`)}`}
+                  href={`mailto:${encodeURIComponent(msg.email)}?subject=${encodeURIComponent(`Re: [${msg.subject}] Respuesta de ${teamInfo.name}`)}`}
                 >
                   ✉ Responder por email
                 </a>
@@ -101,8 +131,16 @@ export default function MessagesManager({ portfolio, setMessageStatus, setNotice
               <a className="message-email" href={`mailto:${msg.email}`}>
                 {msg.email}
               </a>
+              {msg.recipient && msg.recipient !== "all" && (
+                <span className="message-recipient">
+                  Destinatario: {teamMembers.find((member) => member.id === msg.recipient)?.name ?? "Equipo"}
+                </span>
+              )}
 
-              <p className="message-body-text">{msg.message}</p>
+              <MessageConversation
+                message={msg}
+                replies={msg.portfolioMessageReplies ?? []}
+              />
 
               <div className="d-flex align-items-center gap-2 mt-2">
                 <label className="message-status-label m-0">
@@ -118,6 +156,35 @@ export default function MessagesManager({ portfolio, setMessageStatus, setNotice
                   </select>
                 </label>
               </div>
+              <form
+                className="customer-reply-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleReply(msg);
+                }}
+              >
+                <label className="form-label" htmlFor={`operator-reply-${msg.id}`}>
+                  Responder a {msg.name}
+                </label>
+                <textarea
+                  className="form-control"
+                  id={`operator-reply-${msg.id}`}
+                  maxLength={3000}
+                  rows={3}
+                  value={drafts[msg.id] ?? ""}
+                  onChange={(event) =>
+                    setDrafts((current) => ({ ...current, [msg.id]: event.target.value }))
+                  }
+                  placeholder="Escribe una respuesta para guardar en la conversación y enviarla por email…"
+                />
+                <button
+                  className="btn btn-primary-custom btn-sm mt-2"
+                  type="submit"
+                  disabled={!drafts[msg.id]?.trim() || sendingId === msg.id}
+                >
+                  {sendingId === msg.id ? "Guardando…" : "Guardar y responder ↗"}
+                </button>
+              </form>
             </article>
           ))}
         </div>

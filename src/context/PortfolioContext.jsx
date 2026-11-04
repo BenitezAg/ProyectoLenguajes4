@@ -7,7 +7,12 @@ import {
   useState,
 } from "react";
 import { initialPortfolio } from "../data/portfolio.js";
-import { createId, toDatabaseRecord } from "../utils/records.js";
+import {
+  createId,
+  normalizeMessageRecord,
+  toCamelCaseRecord,
+  toDatabaseRecord,
+} from "../utils/records.js";
 import { supabase, supabaseIsConfigured } from "../utils/supabase.js";
 
 const PortfolioContext = createContext(null);
@@ -17,6 +22,8 @@ const TABLES = {
   demos: "portfolio_demos",
   services: "portfolio_services",
 };
+const MESSAGE_SELECT =
+  "id, user_id, name, email, subject, message, recipient, status, notification_status, created_at, responded_at, portfolio_message_replies(id, author_id, author_role, body, created_at)";
 
 function getErrorMessage(error) {
   return error instanceof Error ? error.message : "Error inesperado en Supabase.";
@@ -79,10 +86,10 @@ export function PortfolioProvider({ children }) {
                 .select("*")
                 .order("position")
             : Promise.resolve({ data: [], error: null }),
-          isOperator
+          currentUser
             ? supabase
                 .from("portfolio_messages")
-                .select("id, user_id, name, email, subject, message, status, notification_status, created_at, responded_at")
+                .select(MESSAGE_SELECT)
                 .order("created_at", { ascending: false })
             : Promise.resolve({ data: [], error: null }),
           isOperator
@@ -112,20 +119,24 @@ export function PortfolioProvider({ children }) {
 
       if (currentGeneration !== generation.current) return;
 
-      const projects = (projectsResult.data ?? []).map((project) => ({
+      const projects = (projectsResult.data ?? []).map((record) => {
+        const project = toCamelCaseRecord(record);
+        return {
         ...project,
         description:
           project.description ||
           "Regístrate para descubrir los detalles de este proyecto.",
         technologies: project.technologies ?? "",
-      }));
+        };
+      });
+      const messages = (messagesResult.data ?? []).map(normalizeMessageRecord);
 
       setPortfolio({
         projects,
-        services: servicesResult.data ?? [],
-        demos: demosResult.data ?? [],
-        messages: messagesResult.data ?? [],
-        users: usersResult.data ?? [],
+        services: (servicesResult.data ?? []).map(toCamelCaseRecord),
+        demos: (demosResult.data ?? []).map(toCamelCaseRecord),
+        messages,
+        users: (usersResult.data ?? []).map(toCamelCaseRecord),
         analytics: (analyticsResult.data ?? []).reduce(
           (summary, visit) => ({
             visits: summary.visits + Number(visit.total_visits),
@@ -189,9 +200,7 @@ export function PortfolioProvider({ children }) {
 
   const requireBackend = useCallback(() => {
     if (!supabase) {
-      throw new Error(
-        "Supabase todavía no está configurado. Sigue las instrucciones del README.",
-      );
+      throw new Error("Las consultas no están disponibles en este momento.");
     }
   }, []);
 
@@ -228,35 +237,61 @@ export function PortfolioProvider({ children }) {
   }, [refreshPortfolio, requireBackend]);
 
   const addMessage = useCallback(
-    async ({ name, email, subject, message }) => {
+    async ({ name, email, subject, message, recipient, guestAccessHash, guestAccessToken }) => {
       requireBackend();
-      const result = await supabase
-        .from("portfolio_messages")
-        .insert({
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          subject,
-          message: message.trim(),
-          user_id: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      const saved = throwOnError(result);
-
-      await refreshPortfolio();
-      const notification = await supabase.functions.invoke("notify-contact", {
-        body: { messageId: saved.id },
-      });
-      if (notification.error) {
-        console.error(
-          "La consulta se guardó, pero no se pudo enviar el correo.",
-          notification.error,
+      let messageId;
+      if (user) {
+        const result = await supabase
+          .from("portfolio_messages")
+          .insert({
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            subject,
+            message: message.trim(),
+            recipient,
+            user_id: user.id,
+            guest_access_hash: null,
+          })
+          .select("id")
+          .single();
+        messageId = throwOnError(result).id;
+      } else {
+        messageId = throwOnError(
+          await supabase.rpc("submit_guest_portfolio_message", {
+            p_name: name.trim(),
+            p_email: email.trim().toLowerCase(),
+            p_subject: subject,
+            p_message: message.trim(),
+            p_recipient: recipient,
+            p_guest_access_hash: guestAccessHash,
+          }),
         );
-        return { emailSent: false };
       }
 
-      await refreshPortfolio();
-      return { emailSent: notification.data?.sent === true };
+      let emailSent = false;
+      try {
+        const notification = await supabase.functions.invoke("notify-contact", {
+          body: {
+            action: "new_message",
+            messageId,
+            guestAccessToken: user ? null : guestAccessToken ?? null,
+          },
+        });
+        if (notification.error) {
+          console.error("La consulta se guardó, pero no se pudo enviar el correo.", notification.error);
+        } else {
+          emailSent = notification.data?.sent === true;
+        }
+      } catch (error) {
+        console.error("La consulta se guardó, pero falló el aviso por correo.", error);
+      }
+
+      try {
+        await refreshPortfolio();
+      } catch (error) {
+        console.error("La consulta se guardó, pero no se pudo actualizar la bandeja local.", error);
+      }
+      return { emailSent, saved: true };
     },
     [refreshPortfolio, requireBackend, user?.id],
   );
@@ -296,6 +331,83 @@ export function PortfolioProvider({ children }) {
     await refreshPortfolio();
   }, [refreshPortfolio, requireBackend]);
 
+  const replyToMessage = useCallback(async (messageId, body) => {
+    requireBackend();
+    const replyId = throwOnError(
+      await supabase.rpc(
+        user?.isOperator
+          ? "reply_to_operator_portfolio_message"
+          : "reply_to_portfolio_message",
+        {
+          p_message_id: messageId,
+          p_body: body.trim(),
+        },
+      ),
+    );
+
+    let emailSent = false;
+    try {
+      const notification = await supabase.functions.invoke("notify-contact", {
+        body: {
+          action: user?.isOperator ? "operator_reply" : "customer_reply",
+          replyId,
+        },
+      });
+      if (notification.error) {
+        console.error("La respuesta se guardó, pero no se pudo enviar el correo.", notification.error);
+      } else {
+        emailSent = notification.data?.sent === true;
+      }
+    } catch (error) {
+      console.error("La respuesta se guardó, pero falló el aviso por correo.", error);
+    }
+
+    try {
+      await refreshPortfolio();
+    } catch (error) {
+      console.error("La respuesta se guardó, pero no se pudo actualizar la conversación.", error);
+    }
+    return { emailSent, saved: true };
+  }, [refreshPortfolio, requireBackend, user?.id, user?.isOperator]);
+
+  const getGuestMessage = useCallback(async (accessToken) => {
+    requireBackend();
+    const result = throwOnError(
+      await supabase.rpc("get_guest_portfolio_message", {
+        p_access_token: accessToken,
+      }),
+    );
+    return result;
+  }, [requireBackend]);
+
+  const replyToGuestMessage = useCallback(async (accessToken, body) => {
+    requireBackend();
+    const replyId = throwOnError(
+      await supabase.rpc("reply_to_guest_portfolio_message", {
+        p_access_token: accessToken,
+        p_body: body.trim(),
+      }),
+    );
+    let emailSent = false;
+    try {
+      const notification = await supabase.functions.invoke("notify-contact", {
+        body: {
+          action: "guest_reply",
+          replyId,
+          accessToken,
+        },
+      });
+      if (notification.error) {
+        console.error("La respuesta se guardó, pero no se pudo notificar al equipo.", notification.error);
+      } else {
+        emailSent = notification.data?.sent === true;
+      }
+    } catch (error) {
+      console.error("La respuesta se guardó, pero falló el aviso al equipo.", error);
+    }
+    return { emailSent, saved: true };
+  }, [requireBackend]);
+
   const setUserActive = useCallback(async (id, active) => {
     requireBackend();
     const { error } = await supabase
@@ -322,6 +434,9 @@ export function PortfolioProvider({ children }) {
         saveEntity,
         deleteEntity,
         setMessageStatus,
+        replyToMessage,
+        getGuestMessage,
+        replyToGuestMessage,
         setUserActive,
         refreshPortfolio,
       }}

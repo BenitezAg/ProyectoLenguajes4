@@ -1,37 +1,38 @@
-# Portfolio Full Stack · Trabajo Práctico Integrador · Lenguajes IV
+# Portfolio del equipo · Trabajo Práctico Integrador · Lenguajes IV
 
-Portfolio interactivo grupal desarrollado por un equipo de **4 integrantes** con **React 19**, **Supabase** (Auth, PostgreSQL relacional con Row Level Security y Edge Functions), **Bootstrap 5**, **APIs Web nativas** y **esbuild**.
-
-Cumple de forma integral con todas las condiciones de regularización y promoción del Trabajo Práctico Integrador de **Lenguajes 4**.
+Portfolio interactivo del equipo de **4 integrantes**, realizado para el Trabajo Práctico Integrador de **Lenguajes IV**. El proyecto utiliza **React 19**, **Supabase** (Auth, PostgreSQL con Row Level Security y Edge Functions), **Bootstrap 5**, **APIs Web** y **esbuild**.
 
 ---
 
 ## 👥 Equipo de Desarrollo (4 Integrantes)
 
-La información y perfiles de los 4 integrantes se configuran de forma centralizada en [`src/data/portfolio.js`](src/data/portfolio.js):
+La información del equipo se configura de forma centralizada en [`src/data/portfolio.js`](src/data/portfolio.js):
 
-1. **Ángel Benítez** — *Full Stack Lead & Cloud Architect* (Arquitectura, Supabase/SQL, CI/CD, React 19).
-2. **Sofía Romero** — *Frontend Engineer & UI/UX Specialist* (Interfaces reactivas, CSS moderno, animaciones fluidas, accesibilidad).
-3. **Lucas Maidana** — *Backend & Database Developer* (Lógica de servidor, optimización SQL, validaciones estrictas y APIs REST).
-4. **Valentina Torres** — *Fullstack & QA / Security Engineer* (Políticas RLS en PostgreSQL, pruebas unitarias automatizadas y Web APIs).
+1. **Santiago Daniel Acuña**
+2. **Angel Gabriel Benitez**
+3. **Abel Villafañe**
+4. **Wilson Lopez**
 
-> Cada tarjeta de integrante incluye accesos directos interactivos impulsados por Web APIs (lectura por voz, copiado al portapapeles y enlaces a GitHub/LinkedIn).
+Los roles, correos y enlaces personales se pueden agregar cuando el equipo confirme esos datos.
 
 ---
 
 ## 🚀 Cumplimiento de Requisitos de la Cátedra
 
 ### A. Navegación como Usuario / Visitante
-* **Perfil Profesional y Equipo:** Sección del colectivo y fichas individuales de los 4 integrantes con tecnologías del stack, servicios y trayectoria.
-* **Formulario de Contacto vía Email:** Módulo con validación estricta de campos para:
+* **Presentación del equipo:** Sección del colectivo y fichas de sus cuatro integrantes, sin atribuirles perfiles profesionales no confirmados.
+* **Formulario de consultas:** Módulo con validación de campos para:
   * Cotización de proyectos
   * Asesoría técnica
   * Consultas generales
   * Selección opcional de destinatario preferido (o todo el equipo).
-* **Sección de Proyectos y Demos (con Registración Obligatoria):**
-  * Vista previa pública de proyectos seleccionados.
+  * Envío sin cuenta o con cuenta; cada consulta se guarda en PostgreSQL. Las notificaciones por correo son opcionales y requieren configurar Resend.
+  * Los visitantes reciben un enlace privado para ver respuestas; los clientes registrados tienen la sección **Mis consultas**.
+* **Sección de Proyectos y Demos:**
+  * Vista previa pública de los proyectos que el equipo publique desde el panel.
   * El detalle técnico completo y las **demos interactivas** requieren iniciar sesión o registrarse.
   * Autenticación gestionada mediante Supabase Auth y protegida por políticas de Row Level Security (RLS) en PostgreSQL.
+  * Las cuentas de cliente pueden consultar y responder sus propias conversaciones; solo los operadores pueden revisar la bandeja completa.
 
 ### B. Navegación como Operador / Gestión del Sitio (Condiciones de Promoción)
 1. **CRUD Completo de Contenido:** Crear, editar, visualizar y eliminar Proyectos, Demos y Servicios desde el panel.
@@ -45,11 +46,11 @@ La información y perfiles de los 4 integrantes se configuran de forma centraliz
    * Filtros parametrizados en la bandeja de entrada por estado y tipo de consulta.
 
 ### C. Escalabilidad por 4 Integrantes (Animaciones y Web APIs)
-* **Web Speech API (`speechSynthesis`):** Narración accesible en voz alta del perfil de los integrantes y de la ficha de proyectos.
-* **Clipboard API (`navigator.clipboard`):** Copiado rápido de emails de contacto con notificación instantánea.
+* **Web Speech API (`speechSynthesis`):** Narración en voz alta de los nombres de integrantes y de la ficha de proyectos.
+* **Clipboard API (`navigator.clipboard`):** Copiado del enlace privado de seguimiento de una consulta.
 * **Web Share API (`navigator.share`):** Compartir proyectos en un clic en dispositivos móviles y navegadores compatibles.
 * **Fullscreen API:** Visualización inmersiva en pantalla completa de las demos interactivas.
-* **Network Information / Online Status API:** Detección y badge en tiempo real del estado de conexión (Online / Offline) en el Navbar.
+* **Online Status API:** Indicador de conexión web en la navegación.
 * **Animaciones fluidas:** Efecto typing dinámico en Hero, scroll progress bar en tiempo real, transiciones de revelado (Reveal con Intersection Observer) y microinteracciones de tarjetas.
 
 ---
@@ -83,12 +84,25 @@ npm run build
    VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
    VITE_SUPABASE_ANON_KEY=tu_clave_publishable
    ```
-3. En el **SQL Editor** de Supabase, ejecuta el archivo [`supabase/migrations/20261031000000_initial_schema.sql`](supabase/migrations/20261031000000_initial_schema.sql).
-4. Para otorgar rol de operador a un email registrado, en **Authentication → Users → Edit user → App Metadata**, añade:
+3. Configura los siguientes secretos en **GitHub → Settings → Secrets and variables → Actions** para habilitar el despliegue automático de migraciones:
+   * `SUPABASE_ACCESS_TOKEN`: token de acceso personal generado en Supabase.
+   * `SUPABASE_DB_PASSWORD`: contraseña de la base de datos del proyecto (no la contraseña de inicio de sesión de Supabase).
+   * `SUPABASE_PROJECT_ID`: referencia del proyecto, visible en su URL de Supabase.
+4. Si ya ejecutaste la migración inicial manualmente desde el SQL Editor, vincula primero el proyecto con Supabase CLI y registra esa versión como aplicada para que no intente ejecutarla de nuevo:
+   ```sh
+   supabase link --project-ref <SUPABASE_PROJECT_ID>
+   supabase migration repair --status applied 20261031000000
+   ```
+5. Al hacer push a `main` con cambios en `supabase/migrations/`, GitHub Actions aplicará las migraciones pendientes. También se puede iniciar manualmente desde **Actions → Aplicar migraciones de Supabase → Run workflow**. El workflow utiliza la CLI para aplicar migraciones versionadas con `supabase db push`.
+6. Para usar la base de datos localmente, copia `.env.example` a `.env` y reemplaza los valores de ejemplo por el **Project URL** y la **Publishable key** del proyecto Supabase. Si no están configurados, el sitio funciona en modo vista previa y el formulario de contacto permanece desactivado; no guarda mensajes localmente.
+   Las migraciones nuevas ocultan el contenido de ejemplo no confirmado. El equipo puede publicar proyectos y servicios reales desde el panel del operador.
+7. Para publicar el sitio con Supabase conectado, configura también los secretos `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` que consume el workflow de GitHub Pages. La clave pública se incluye en el frontend; nunca configures una `service_role` key como variable `VITE_*`.
+8. Para otorgar rol de operador a un email registrado, en **Authentication → Users → Edit user → App Metadata**, añade:
    ```json
    { "portfolio_role": "operator" }
    ```
    Al recargar el sitio, se desbloqueará el **Panel del operador**.
+9. Para recibir notificaciones y responder por correo, configura en **Supabase → Edge Functions → Secrets** `RESEND_API_KEY`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL` (remitente verificado en Resend) y `CONTACT_SITE_URL` (URL pública completa del portfolio). Después despliega `notify-contact` desde el proyecto. El almacenamiento y las conversaciones funcionan aunque la entrega de correo no esté configurada; en ese caso el equipo puede responder desde su bandeja del operador y el visitante conserva su enlace privado.
 
 ---
 

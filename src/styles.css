@@ -202,14 +202,6 @@ textarea:focus-visible {
 .section-padding {
   padding: 114px 0;
 }
-.backend-setup-notice {
-  margin: calc(var(--navbar-height) + 10px) 0 -104px; padding: 13px 15px; border: 1px solid rgb(255 201 107 / 18%);
-  border-left: 3px solid #d6ad61; border-radius: 6px; background: rgb(255 201 107 / 4%);
-  color: #d3c8b3; font-size: .77rem; line-height: 1.75;
-}
-.backend-setup-notice a {
-  margin-left: 8px; color: var(--accent); text-underline-offset: 3px;
-}
 .about-section,
 .skills-section {
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgb(255 255 255 / 1%);
@@ -239,10 +231,23 @@ textarea:focus-visible {
   padding: 5px 0;
 }
 .about-avatar {
-  display: grid; width: 78px; height: 78px;
-  margin-bottom: 26px; place-items: center; border: 1px solid rgb(214 255 98 / 25%);
-  border-radius: 50%; background: linear-gradient(135deg, rgb(214 255 98 / 14%), rgb(169 161 255 / 13%)); color: var(--accent);
-  font: 600 1.35rem var(--display); letter-spacing: -.08em;
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.about-avatar span {
+  display: grid; width: 78px; height: 78px; margin-bottom: 26px;
+  place-items: center; border: 1px solid rgb(214 255 98 / 25%);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgb(214 255 98 / 14%), rgb(169 161 255 / 13%));
+  color: var(--accent); font: 600 1.35rem var(--display); letter-spacing: -.08em;
+}
+.skill-list {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.skill-badge {
+  display: inline-flex; align-items: center; padding: 7px 10px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: rgb(255 255 255 / 3%); color: var(--muted);
+  font-size: .73rem;
 }
 .about-copy p {
   max-width: 485px; color: var(--muted); line-height: 1.9;
@@ -1017,6 +1022,67 @@ textarea:focus-visible {
 .message-email {
   display: inline-block; margin-top: 3px; color: var(--muted);
   font-size: .73rem;
+}
+.message-recipient {
+  display: block; margin-top: 5px; color: var(--soft); font-size: .72rem;
+}
+.conversation-thread {
+  display: grid; gap: 8px; margin-top: 14px;
+}
+.conversation-entry {
+  max-width: 94%; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 8px; background: rgb(255 255 255 / 2%);
+}
+.conversation-entry-operator {
+  justify-self: end; border-color: rgb(214 255 98 / 18%);
+  background: rgb(214 255 98 / 4%);
+}
+.conversation-entry-heading {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  justify-content: space-between; gap: 8px; color: var(--accent);
+  font-size: .72rem;
+}
+.conversation-entry-heading time {
+  color: var(--soft); font-size: .65rem;
+}
+.conversation-entry p {
+  margin: 8px 0 0; color: #d2cfda; font-size: .8rem;
+  line-height: 1.7; overflow-wrap: anywhere; white-space: pre-wrap;
+}
+.customer-reply-form {
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.customer-reply-form .form-control {
+  border-color: var(--line-strong); background: var(--surface);
+  color: var(--text);
+}
+.customer-inbox-list {
+  display: grid; gap: 16px; margin-top: 22px;
+}
+.customer-message-card h2,
+.guest-message-card h2 {
+  margin: 0; color: var(--accent); font: 500 1rem var(--display);
+  text-transform: capitalize;
+}
+.guest-message-card {
+  max-width: 850px; margin-top: 24px;
+}
+.inbox-page h1 {
+  margin: 0; font: 550 clamp(2rem, 5vw, 3rem)/1.12 var(--display);
+}
+.contact-guest-note {
+  margin: 0 0 16px; color: var(--muted); font-size: .82rem;
+  line-height: 1.65;
+}
+.guest-follow-up-link {
+  color: #17200a; font-weight: 650; text-underline-offset: 3px;
+}
+.auth-preview-notice {
+  margin-top: 20px; padding: 16px; border: 1px solid var(--line);
+  border-radius: 8px; background: rgb(255 255 255 / 2%);
+}
+.auth-preview-notice p {
+  color: var(--muted); font-size: .83rem; line-height: 1.7;
 }
 .message-item > p {
   margin: 14px 0; padding-top: 12px; border-top: 1px solid var(--line);

@@ -1,20 +1,10 @@
-import { useState } from "react";
 import { teamMembers, timeline, teamInfo } from "../data/portfolio.js";
-import { copyToClipboard, useSpeech } from "../utils/webApis.js";
+import { useSpeech } from "../utils/webApis.js";
 import Reveal from "./Reveal.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 
 function MemberCard({ member, index }) {
-  const { speak, stop, speaking } = useSpeech();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyEmail = async () => {
-    const ok = await copyToClipboard(member.email);
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  const { speak, stop, speaking, isSupported } = useSpeech();
 
   const handleToggleSpeech = () => {
     if (speaking) {
@@ -41,13 +31,15 @@ function MemberCard({ member, index }) {
 
       <p className="team-member-bio">{member.bio}</p>
 
-      <div className="team-skills-tags">
-        {member.skills.map((skill) => (
-          <span key={skill} className="team-skill-badge">
-            {skill}
-          </span>
-        ))}
-      </div>
+      {member.skills.length > 0 && (
+        <div className="team-skills-tags">
+          {member.skills.map((skill) => (
+            <span key={skill} className="team-skill-badge">
+              {skill}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="team-card-footer">
         <div className="team-social-links">
@@ -78,7 +70,7 @@ function MemberCard({ member, index }) {
         </div>
 
         <div className="team-actions">
-          <button
+          {isSupported && <button
             type="button"
             className="btn-web-api"
             onClick={handleToggleSpeech}
@@ -86,16 +78,7 @@ function MemberCard({ member, index }) {
             aria-label={speaking ? "Detener narración" : `Escuchar perfil de ${member.name}`}
           >
             {speaking ? "⏹ Silenciar" : "🔊 Voz"}
-          </button>
-          <button
-            type="button"
-            className="btn-web-api"
-            onClick={handleCopyEmail}
-            title="Copiar correo (Clipboard API)"
-            aria-label={`Copiar correo de ${member.name}`}
-          >
-            {copied ? "✓ Copiado" : "📋 Email"}
-          </button>
+          </button>}
         </div>
       </div>
     </Reveal>
@@ -108,7 +91,7 @@ export default function TeamSection() {
       <div className="container">
         <SectionHeading
           eyebrow="Equipo Integrador · 4 Integrantes"
-          title="Talento multidisciplinario. Código sólido."
+          title="Nuestro equipo."
           description={teamInfo.description}
         />
 
@@ -123,11 +106,10 @@ export default function TeamSection() {
             <div className="col-lg-5">
               <Reveal className="trajectory-highlight">
                 <span className="eyebrow">Metodología y sinergia</span>
-                <h3>Construcción colaborativa en todo el ciclo de vida</h3>
+                <h3>Un portfolio construido en equipo</h3>
                 <p>
-                  Dividimos responsabilidades estratégicamente entre Frontend,
-                  Backend, DevOps y Seguridad. Cada funcionalidad cuenta con
-                  validación en dos capas, tipado estricto y pruebas automatizadas.
+                  Este espacio reúne la presentación del equipo y permite compartir
+                  proyectos y recibir consultas en un mismo lugar.
                 </p>
                 <a className="btn btn-outline-custom mt-2" href="#contacto">
                   Contactar al equipo ↗

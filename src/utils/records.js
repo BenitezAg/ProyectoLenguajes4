@@ -16,6 +16,15 @@ export function toDatabaseRecord(record) {
   );
 }
 
+export function normalizeMessageRecord(record) {
+  return {
+    ...toCamelCaseRecord(record),
+    portfolioMessageReplies: (record.portfolio_message_replies ?? []).map(
+      toCamelCaseRecord,
+    ),
+  };
+}
+
 export function createId(prefix) {
   return `${prefix}-${crypto.randomUUID()}`;
 }

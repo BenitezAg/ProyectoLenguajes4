@@ -34,32 +34,36 @@ export default function ProjectsSection({ user, onLogin, onSelectProject }) {
     <section id="proyectos" className="section-padding projects-section">
       <div className="container">
         <SectionHeading
-          eyebrow="Proyectos seleccionados · 2024—2026"
-          title="Trabajo que habla por sí mismo."
+          eyebrow="Trabajo del equipo"
+          title="Proyectos."
           description={
-            user
-              ? "Selecciona un proyecto para consultar sus detalles y demos interactivas."
-              : "Regístrate gratis para descubrir los proyectos y probar las demos interactivas."
+            portfolio.projects.length === 0
+              ? "Los proyectos del equipo se publicarán aquí cuando estén listos."
+              : user
+                ? "Selecciona un proyecto para consultar sus detalles y demos interactivas."
+                : "Crea una cuenta para descubrir los proyectos publicados y probar sus demos."
           }
         />
-        <Reveal className="project-filters" aria-label="Filtrar proyectos por categoría">
-          {filters.map((item) => (
-            <button
-              key={item.value}
-              className={`filter-button${filter === item.value ? " active" : ""}`}
-              type="button"
-              aria-pressed={filter === item.value}
-              onClick={() => setFilter(item.value)}
-            >
-              {item.label}
-              <span className="filter-count">
-                {item.value === "todos"
-                  ? portfolio.projects.length
-                  : portfolio.projects.filter((project) => project.category === item.value).length}
-              </span>
-            </button>
-          ))}
-        </Reveal>
+        {portfolio.projects.length > 0 && (
+          <Reveal className="project-filters" aria-label="Filtrar proyectos por categoría">
+            {filters.map((item) => (
+              <button
+                key={item.value}
+                className={`filter-button${filter === item.value ? " active" : ""}`}
+                type="button"
+                aria-pressed={filter === item.value}
+                onClick={() => setFilter(item.value)}
+              >
+                {item.label}
+                <span className="filter-count">
+                  {item.value === "todos"
+                    ? portfolio.projects.length
+                    : portfolio.projects.filter((project) => project.category === item.value).length}
+                </span>
+              </button>
+            ))}
+          </Reveal>
+        )}
         {filteredProjects.length ? (
           <div className="projects-grid">
             {filteredProjects.map((project, index) => (
@@ -74,9 +78,13 @@ export default function ProjectsSection({ user, onLogin, onSelectProject }) {
             ))}
           </div>
         ) : (
-          <p className="empty-state">Todavía no hay proyectos en esta categoría.</p>
+          <p className="empty-state">
+            {portfolio.projects.length === 0
+              ? "Todavía no hay proyectos publicados."
+              : "Todavía no hay proyectos en esta categoría."}
+          </p>
         )}
-        {!user && (
+        {portfolio.projects.length > 0 && !user && (
           <div className="registration-callout">
             <span className="registration-icon" aria-hidden="true">✧</span>
             <p>

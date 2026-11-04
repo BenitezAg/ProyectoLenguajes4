@@ -9,9 +9,13 @@ export default function ServicesSection() {
     <section id="servicios" className="section-padding services-section">
       <div className="container">
         <SectionHeading
-          eyebrow="En qué puedo ayudarte"
-          title="Ideas, estrategia y desarrollo."
-          description="Colaboro en distintas etapas de un producto digital: desde el primer boceto hasta una aplicación lista para crecer."
+          eyebrow={portfolio.services.length ? "Qué ofrece el equipo" : "Sección en preparación"}
+          title="Servicios."
+          description={
+            portfolio.services.length
+              ? "Servicios y áreas de trabajo disponibles para proyectos digitales."
+              : "El equipo publicará aquí sus servicios cuando estén definidos."
+          }
         />
         <div className="row g-3">
           {portfolio.services.map((service, index) => (
@@ -29,7 +33,7 @@ export default function ServicesSection() {
             </div>
           ))}
           {portfolio.services.length === 0 && (
-            <p className="text-muted-custom">Pronto publicaré nuevos servicios.</p>
+            <p className="text-muted-custom">Todavía no hay servicios publicados.</p>
           )}
         </div>
       </div>

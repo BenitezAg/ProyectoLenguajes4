@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { usePortfolio } from "../context/PortfolioContext.jsx";
-import { teamInfo, teamMembers } from "../data/portfolio.js";
+import { teamMembers } from "../data/portfolio.js";
+import { createGuestAccess, createGuestAccessUrl } from "../utils/guestAccess.js";
+import { copyToClipboard } from "../utils/webApis.js";
 import Reveal from "./Reveal.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 
@@ -20,7 +22,7 @@ const SUBJECT_OPTIONS = [
 ];
 
 export default function ContactSection({ user }) {
-  const { addMessage, loading } = usePortfolio();
+  const { addMessage, loading, backendConfigured } = usePortfolio();
   const [form, setForm] = useState(() => ({
     ...initialForm,
     name: user?.name ?? "",
@@ -28,11 +30,14 @@ export default function ContactSection({ user }) {
   }));
   const [feedback, setFeedback] = useState(null);
   const [sending, setSending] = useState(false);
+  const [followUpUrl, setFollowUpUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
     setFeedback(null);
+    setFollowUpUrl("");
   }
 
   async function handleSubmit(event) {
@@ -52,24 +57,27 @@ export default function ContactSection({ user }) {
           ? "Todo el equipo"
           : teamMembers.find((m) => m.id === form.recipient)?.name ?? "Equipo";
 
-      const fullMessage =
-        form.recipient !== "all"
-          ? `[Dirigido a: ${recipientName}]\n\n${form.message.trim()}`
-          : form.message.trim();
+      const guestAccess = user ? null : await createGuestAccess();
 
       const result = await addMessage({
         name: form.name.trim(),
         email: form.email.trim(),
         subject: form.subject,
-        message: fullMessage,
+        message: form.message.trim(),
+        recipient: form.recipient,
+        guestAccessHash: guestAccess?.hash,
+        guestAccessToken: guestAccess?.token,
       });
 
       setFeedback({
         type: result.emailSent ? "success" : "warning",
         text: result.emailSent
-          ? `¡Gracias! Tu consulta dirigida a ${recipientName} se guardó en Supabase y notificamos al equipo por email.`
-          : `Tu consulta dirigida a ${recipientName} quedó registrada en el sistema.`,
+          ? `Tu consulta para ${recipientName} se guardó y notificamos al equipo por email.`
+          : `Tu consulta para ${recipientName} se guardó. El equipo podrá responderte desde la bandeja de consultas.`,
       });
+      if (guestAccess) {
+        setFollowUpUrl(createGuestAccessUrl(guestAccess.token));
+      }
       setForm({
         ...initialForm,
         name: user?.name ?? "",
@@ -79,14 +87,14 @@ export default function ContactSection({ user }) {
       console.error("Error al enviar consulta:", error);
       setFeedback({
         type: "danger",
-        text: "No se pudo enviar el mensaje a Supabase. Revisa tu conexión y vuelve a intentarlo.",
+        text: error.message || "No se pudo guardar la consulta. Comprueba tu conexión e inténtalo otra vez.",
       });
     } finally {
       setSending(false);
     }
   }
 
-  const disabled = loading || sending;
+  const disabled = loading || sending || !backendConfigured;
 
   return (
     <section id="contacto" className="section-padding contact-section">
@@ -95,20 +103,17 @@ export default function ContactSection({ user }) {
           <div className="col-lg-5">
             <SectionHeading
               eyebrow="Contacto directo · 4 Integrantes"
-              title="¿Empezamos a trabajar?"
-              description="Envíanos tu consulta, solicitud de cotización o inquietud técnica. Respondemos a la brevedad."
+              title="Conversemos."
+              description="Envíanos una consulta o propuesta para que el equipo pueda revisarla."
             />
             <Reveal className="contact-team-list mt-4">
-              <span className="eyebrow">Contacto general del colectivo</span>
-              <p className="contact-main-email">
-                ✉ <a href={`mailto:${teamInfo.email}`}>{teamInfo.email}</a>
-              </p>
+              <span className="eyebrow">Contacto del equipo</span>
+              <p>Comunícate con el equipo mediante este formulario.</p>
               <span className="eyebrow mt-3">Integrantes directos</span>
               <ul className="team-quick-contacts">
                 {teamMembers.map((member) => (
                   <li key={member.id}>
-                    <strong>{member.name}</strong> ·{" "}
-                    <span className="text-muted">{member.role}</span>
+                    <strong>{member.name}</strong>
                   </li>
                 ))}
               </ul>
@@ -117,6 +122,16 @@ export default function ContactSection({ user }) {
 
           <div className="col-lg-6 offset-lg-1">
             <Reveal className="contact-form-card">
+              {!backendConfigured && (
+                <p className="alert alert-warning" role="status">
+                  La vista previa está disponible. El formulario se habilitará cuando la base de datos del proyecto esté conectada.
+                </p>
+              )}
+              {backendConfigured && (
+                <p className="contact-guest-note">
+                  Puedes enviar una consulta sin crear una cuenta. Te daremos un enlace privado para seguir la conversación.
+                </p>
+              )}
               <form className="contact-form" onSubmit={handleSubmit}>
                 <div className="row g-3">
                   <div className="col-sm-6">
@@ -192,7 +207,7 @@ export default function ContactSection({ user }) {
                       <option value="all">Equipo completo ({teamMembers.length} integrantes)</option>
                       {teamMembers.map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.name} ({m.role.split("&")[0].trim()})
+                          {m.name}
                         </option>
                       ))}
                     </select>
@@ -214,7 +229,7 @@ export default function ContactSection({ user }) {
                       minLength={20}
                       name="message"
                       onChange={updateField}
-                      placeholder="Describe tu proyecto, cotización requerida o consulta técnica detallada..."
+                      placeholder="Describe tu consulta o propuesta con el mayor detalle posible..."
                       required
                       rows={4}
                       value={form.message}
@@ -229,6 +244,40 @@ export default function ContactSection({ user }) {
                     role="alert"
                   >
                     {feedback.text}
+                  </div>
+                )}
+                {followUpUrl && (
+                  <div className="alert alert-info mt-3" role="status">
+                    <p className="mb-2">
+                      Guarda este enlace privado para leer las respuestas y continuar la conversación. Cualquier persona que lo tenga podrá verla.
+                    </p>
+                    <a className="guest-follow-up-link" href={followUpUrl}>
+                      Abrir mi conversación ↗
+                    </a>
+                    <button
+                      className="btn btn-ghost btn-sm ms-2"
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const didCopy = await copyToClipboard(followUpUrl);
+                          setCopied(didCopy);
+                          if (!didCopy) {
+                            setFeedback({
+                              type: "warning",
+                              text: "Este navegador no permite copiar automáticamente. Abre tu conversación y guarda el enlace de la barra del navegador.",
+                            });
+                          }
+                        } catch (error) {
+                          console.error("No se pudo copiar el enlace de seguimiento.", error);
+                          setFeedback({
+                            type: "warning",
+                            text: "No se pudo copiar automáticamente. Abre tu conversación y guarda el enlace de la barra del navegador.",
+                          });
+                        }
+                      }}
+                    >
+                      {copied ? "✓ Enlace copiado" : "Copiar enlace"}
+                    </button>
                   </div>
                 )}
 

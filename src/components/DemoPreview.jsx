@@ -4,7 +4,22 @@ import { toggleFullscreen } from "../utils/webApis.js";
 export default function DemoPreview({ demo }) {
   const [count, setCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState("");
   const containerRef = useRef(null);
+
+  async function handleFullscreen() {
+    setFullscreenError("");
+    try {
+      await toggleFullscreen(containerRef.current);
+    } catch (error) {
+      console.error("No se pudo activar la pantalla completa.", error);
+      setFullscreenError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo activar la pantalla completa en este navegador.",
+      );
+    }
+  }
 
   const renderContent = () => {
     switch (demo.kind) {
@@ -120,13 +135,14 @@ export default function DemoPreview({ demo }) {
         <button
           type="button"
           className="demo-fullscreen-btn"
-          onClick={() => toggleFullscreen(containerRef.current)}
+          onClick={() => void handleFullscreen()}
           title="Pantalla completa (Fullscreen API)"
           aria-label="Ver demo en pantalla completa"
         >
           ⛶ Pantalla completa
         </button>
       </div>
+      {fullscreenError && <p className="alert alert-warning" role="status">{fullscreenError}</p>}
       {renderContent()}
     </div>
   );

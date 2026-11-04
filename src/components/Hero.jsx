@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { teamInfo, teamMembers } from "../data/portfolio.js";
 
 const phrases = [
-  "Equipo de 4 desarrolladores full stack.",
-  "React 19 + PostgreSQL con Row Level Security.",
-  "Microinteracciones fluidas y Web APIs nativas.",
-  "Arquitectura robusta de la BD al frontend.",
+  "Un trabajo colaborativo.",
+  "Un proyecto de Lenguajes IV.",
+  "Ideas que toman forma en equipo.",
+  "Diseño, código y aprendizaje.",
 ];
 
 function useTypingEffect() {
@@ -49,9 +49,9 @@ export default function Hero() {
 
         <p className="hero-overline">{teamInfo.tagline}</p>
         <h1 className="hero-title">
-          Desarrollamos soluciones
+          Un proyecto construido
           <br />
-          <span className="hero-accent">para que las ideas escalen.</span>
+          <span className="hero-accent">en equipo, línea a línea.</span>
         </h1>
 
         <div className="hero-caption" aria-live="polite">
@@ -61,8 +61,7 @@ export default function Hero() {
         </div>
 
         <p className="hero-intro">
-          Portfolio interactivo desarrollado colaborativamente por {teamMembers.length} integrantes.
-          Combina React 19, Supabase (PostgreSQL con RLS), Bootstrap 5, APIs Web avanzadas y animaciones fluidas.
+          Este portfolio presenta al equipo y reúne el trabajo del proyecto integrador de Lenguajes IV.
         </p>
 
         <div className="d-flex flex-wrap gap-3 hero-actions">
@@ -79,7 +78,7 @@ export default function Hero() {
 
         <div className="hero-footnote">
           <span>{teamMembers.map((m) => m.name.split(" ")[0]).join(" · ")}</span>
-          <span>Desarrollo en equipo · Disponible para proyectos</span>
+          <span>Trabajo práctico integrador · Lenguajes IV</span>
         </div>
       </div>
       <a className="hero-scroll" href="#equipo" aria-label="Ir a la sección de equipo">

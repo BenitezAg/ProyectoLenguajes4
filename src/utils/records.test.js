@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createId,
   formatDate,
+  normalizeMessageRecord,
   toCamelCaseRecord,
   toDatabaseRecord,
 } from "./records.js";
@@ -22,7 +23,24 @@ test("converts database records and column names without losing Unicode data", (
     visitDate: "2026-10-31",
     title: "Ilustración editorial",
   });
+
   assert.deepEqual(toDatabaseRecord(converted), project);
+});
+
+test("normalizes message and nested reply fields from Supabase records", () => {
+  const message = normalizeMessageRecord({
+    created_at: "2026-11-04T10:00:00Z",
+    portfolio_message_replies: [
+      {
+        author_role: "operator",
+        created_at: "2026-11-04T11:00:00Z",
+      },
+    ],
+  });
+
+  assert.equal(message.createdAt, "2026-11-04T10:00:00Z");
+  assert.equal(message.portfolioMessageReplies[0].authorRole, "operator");
+  assert.equal(message.portfolioMessageReplies[0].createdAt, "2026-11-04T11:00:00Z");
 });
 
 test("creates uniquely namespaced IDs that the database accepts", () => {

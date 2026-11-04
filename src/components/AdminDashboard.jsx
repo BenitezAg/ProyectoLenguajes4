@@ -18,9 +18,11 @@ const TABS = [
 export default function AdminDashboard({ onExit }) {
   const {
     portfolio,
+    storageError,
     saveEntity,
     deleteEntity,
     setMessageStatus,
+    replyToMessage,
     setUserActive,
   } = usePortfolio();
 
@@ -63,6 +65,7 @@ export default function AdminDashboard({ onExit }) {
           ))}
         </nav>
 
+        {storageError && <p className="alert alert-danger mt-3" role="alert">{storageError}</p>}
         {notice && <p className="admin-notice" role="status">{notice}</p>}
 
         <div className="admin-content mt-3">
@@ -98,6 +101,7 @@ export default function AdminDashboard({ onExit }) {
             <MessagesManager
               portfolio={portfolio}
               setMessageStatus={setMessageStatus}
+              replyToMessage={replyToMessage}
               setNotice={setNotice}
             />
           )}

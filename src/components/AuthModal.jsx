@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 
-export default function AuthModal({ onClose, onLogin, onRegister, initialMode = "login" }) {
+export default function AuthModal({
+  onClose,
+  onLogin,
+  onRegister,
+  backendConfigured,
+  initialMode = "login",
+}) {
   const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
@@ -86,65 +92,78 @@ export default function AuthModal({ onClose, onLogin, onRegister, initialMode = 
             ? "Crea tu cuenta gratuita para explorar los proyectos y sus experiencias interactivas."
             : "Inicia sesión con tu cuenta segura de Supabase."}
         </p>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === "register" && (
-            <label>
-              Nombre
-              <input
-                autoComplete="name"
-                maxLength={70}
-                minLength={2}
-                name="name"
-                required
-                value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
-              />
-            </label>
-          )}
-          {notice && <p className="alert alert-success mb-0" role="status">{notice}</p>}
-          <label>
-            Correo electrónico
-            <input
-              autoComplete="email"
-              maxLength={254}
-              name="email"
-              required
-              type="email"
-              value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
-            />
-          </label>
-          <label>
-            Contraseña
-            <input
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
-              maxLength={128}
-              minLength={10}
-              name="password"
-              required
-              type="password"
-              value={form.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
-            />
-            {mode === "register" && (
-              <span className="input-hint">Utiliza al menos 10 caracteres.</span>
-            )}
-          </label>
-          {error && <p className="alert alert-danger mb-0" role="alert">{error}</p>}
-          <button className="btn btn-primary-custom w-100" type="submit" disabled={submitting}>
-            {submitting ? "Verificando…" : mode === "register" ? "Crear cuenta" : "Iniciar sesión"}
-          </button>
-        </form>
-        <p className="auth-switch">
-          {mode === "register" ? "¿Ya tienes una cuenta?" : "¿Primera vez por aquí?"}{" "}
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => changeMode(mode === "register" ? "login" : "register")}
-          >
-            {mode === "register" ? "Inicia sesión" : "Regístrate"}
-          </button>
-        </p>
+        {!backendConfigured ? (
+          <div className="auth-preview-notice">
+            <p>
+              El inicio de sesión y el registro estarán disponibles cuando la base de datos del portfolio esté conectada.
+            </p>
+            <button className="btn btn-primary-custom w-100" type="button" onClick={onClose}>
+              Volver a la vista previa
+            </button>
+          </div>
+        ) : (
+          <>
+            <form className="auth-form" onSubmit={handleSubmit}>
+              {mode === "register" && (
+                <label>
+                  Nombre
+                  <input
+                    autoComplete="name"
+                    maxLength={70}
+                    minLength={2}
+                    name="name"
+                    required
+                    value={form.name}
+                    onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  />
+                </label>
+              )}
+              {notice && <p className="alert alert-success mb-0" role="status">{notice}</p>}
+              <label>
+                Correo electrónico
+                <input
+                  autoComplete="email"
+                  maxLength={254}
+                  name="email"
+                  required
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => setForm({ ...form, email: event.target.value })}
+                />
+              </label>
+              <label>
+                Contraseña
+                <input
+                  autoComplete={mode === "register" ? "new-password" : "current-password"}
+                  maxLength={128}
+                  minLength={mode === "register" ? 10 : undefined}
+                  name="password"
+                  required
+                  type="password"
+                  value={form.password}
+                  onChange={(event) => setForm({ ...form, password: event.target.value })}
+                />
+                {mode === "register" && (
+                  <span className="input-hint">Utiliza al menos 10 caracteres.</span>
+                )}
+              </label>
+              {error && <p className="alert alert-danger mb-0" role="alert">{error}</p>}
+              <button className="btn btn-primary-custom w-100" type="submit" disabled={submitting}>
+                {submitting ? "Verificando…" : mode === "register" ? "Crear cuenta" : "Iniciar sesión"}
+              </button>
+            </form>
+            <p className="auth-switch">
+              {mode === "register" ? "¿Ya tienes una cuenta?" : "¿Primera vez por aquí?"}{" "}
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => changeMode(mode === "register" ? "login" : "register")}
+              >
+                {mode === "register" ? "Inicia sesión" : "Regístrate"}
+              </button>
+            </p>
+          </>
+        )}
       </section>
     </div>
   );

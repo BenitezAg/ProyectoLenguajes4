@@ -5,6 +5,7 @@ import { shareContent, useSpeech } from "../utils/webApis.js";
 export default function ProjectModal({ project, demos, onClose }) {
   const { speak, stop, speaking, isSupported } = useSpeech();
   const [shared, setShared] = useState(false);
+  const [shareError, setShareError] = useState("");
 
   useEffect(() => {
     if (!project) return undefined;
@@ -30,14 +31,20 @@ export default function ProjectModal({ project, demos, onClose }) {
   };
 
   const handleShare = async () => {
-    const success = await shareContent({
-      title: project.title,
-      text: project.description,
-      url: window.location.href,
-    });
-    if (success) {
-      setShared(true);
-      setTimeout(() => setShared(false), 2000);
+    setShareError("");
+    try {
+      const success = await shareContent({
+        title: project.title,
+        text: project.description,
+        url: window.location.href,
+      });
+      if (success) {
+        setShared(true);
+        setTimeout(() => setShared(false), 2000);
+      }
+    } catch (error) {
+      console.error("No se pudo compartir el proyecto.", error);
+      setShareError("No se pudo compartir ni copiar el enlace en este navegador.");
     }
   };
 
@@ -87,6 +94,7 @@ export default function ProjectModal({ project, demos, onClose }) {
             </button>
           </div>
         </div>
+        {shareError && <p className="alert alert-warning mt-2" role="status">{shareError}</p>}
 
         <h2 id="project-modal-title">
           {project.emoji} {project.title}

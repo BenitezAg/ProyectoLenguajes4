@@ -10,7 +10,7 @@ const links = [
   ["Contacto", "#contacto"],
 ];
 
-export default function Navbar({ user, onLogin, onLogout, onOperator }) {
+export default function Navbar({ user, onLogin, onLogout, onOperator, onCustomerMessages }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isOnline = useOnlineStatus();
 
@@ -31,8 +31,8 @@ export default function Navbar({ user, onLogin, onLogout, onOperator }) {
         <div className="d-flex align-items-center gap-2 d-lg-none">
           <span
             className={`online-badge ${isOnline ? "online" : "offline"}`}
-            title={isOnline ? "Conexión web activa (Network API)" : "Sin conexión web"}
-            aria-label={isOnline ? "En línea" : "Desconectado"}
+            title={isOnline ? "La conexión del dispositivo parece activa" : "Sin conexión de red"}
+            aria-label={isOnline ? "Conectado" : "Sin conexión"}
           >
             <span className="dot" />
           </span>
@@ -78,14 +78,29 @@ export default function Navbar({ user, onLogin, onLogout, onOperator }) {
                 </a>
               </li>
             )}
+            {user && !user.isOperator && (
+              <li className="nav-item">
+                <a
+                  className="nav-link"
+                  href="#mis-consultas"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onCustomerMessages();
+                    setMenuOpen(false);
+                  }}
+                >
+                  Mis consultas
+                </a>
+              </li>
+            )}
 
             <li className="nav-item d-none d-lg-flex align-items-center">
               <span
                 className={`online-badge ${isOnline ? "online" : "offline"}`}
-                title={isOnline ? "Web Network API: En línea" : "Web Network API: Desconectado"}
+                title={isOnline ? "La conexión del dispositivo parece activa" : "Sin conexión de red"}
               >
                 <span className="dot" />
-                <span className="badge-text">{isOnline ? "Online" : "Offline"}</span>
+                <span className="badge-text">{isOnline ? "Conectado" : "Sin conexión"}</span>
               </span>
             </li>
 

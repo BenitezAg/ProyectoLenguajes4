@@ -1,17 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import TeamSection from "./components/TeamSection.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import AuthModal from "./components/AuthModal.jsx";
 import ContactSection from "./components/ContactSection.jsx";
+import CustomerInbox from "./components/CustomerInbox.jsx";
 import Footer from "./components/Footer.jsx";
+import GuestMessageInbox from "./components/GuestMessageInbox.jsx";
 import Hero from "./components/Hero.jsx";
 import Navbar from "./components/Navbar.jsx";
 import ProjectModal from "./components/ProjectModal.jsx";
 import ProjectsSection from "./components/ProjectsSection.jsx";
 import ServicesSection from "./components/ServicesSection.jsx";
 import SkillsSection from "./components/SkillsSection.jsx";
+import TeamSection from "./components/TeamSection.jsx";
 import { PortfolioProvider, usePortfolio } from "./context/PortfolioContext.jsx";
-import { supabaseSetupMessage } from "./utils/supabase.js";
+import { getGuestAccessToken } from "./utils/guestAccess.js";
+
+function getPageFromHash() {
+  if (getGuestAccessToken()) return "guestInbox";
+  if (window.location.hash === "#mis-consultas") return "customerInbox";
+  if (window.location.hash === "#operador") return "operator";
+  return "portfolio";
+}
 
 function Portfolio() {
   const {
@@ -25,9 +34,8 @@ function Portfolio() {
     backendConfigured,
     recordVisit,
   } = usePortfolio();
-  const [page, setPage] = useState(
-    () => window.location.hash === "#operador" ? "operator" : "portfolio",
-  );
+  const [page, setPage] = useState(getPageFromHash);
+  const [guestAccessToken, setGuestAccessToken] = useState(getGuestAccessToken);
   const [authMode, setAuthMode] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -64,10 +72,23 @@ function Portfolio() {
     setPage("portfolio");
     setNotice("");
   }, []);
+  const closeInbox = useCallback(() => {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search + "#inicio");
+    setPage("portfolio");
+    setGuestAccessToken("");
+    setNotice("");
+  }, []);
+
+  const openCustomerInbox = useCallback(() => {
+    window.location.hash = "mis-consultas";
+    setPage("customerInbox");
+    setNotice("");
+  }, []);
 
   useEffect(() => {
     function syncPage() {
-      setPage(window.location.hash === "#operador" ? "operator" : "portfolio");
+      setPage(getPageFromHash());
+      setGuestAccessToken(getGuestAccessToken());
     }
     window.addEventListener("hashchange", syncPage);
     return () => window.removeEventListener("hashchange", syncPage);
@@ -89,6 +110,9 @@ function Portfolio() {
 
   const closeProject = useCallback(() => setSelectedProject(null), []);
   const operatorPage = page === "operator" && user?.isOperator;
+  const customerInboxPage =
+    page === "customerInbox" && user && !user.isOperator;
+  const guestInboxPage = page === "guestInbox" && guestAccessToken;
 
   return (
     <>
@@ -106,26 +130,17 @@ function Portfolio() {
           setNotice("No se pudo cerrar la sesión en Supabase. Vuelve a intentarlo.");
         })}
         onOperator={openAdmin}
+        onCustomerMessages={openCustomerInbox}
       />
       {operatorPage ? (
         <AdminDashboard onExit={closeAdmin} />
+      ) : customerInboxPage ? (
+        <CustomerInbox onExit={closeInbox} />
+      ) : guestInboxPage ? (
+        <GuestMessageInbox accessToken={guestAccessToken} onExit={closeInbox} />
       ) : (
         <main aria-busy={loading}>
           {notice && <div className="container"><p className="admin-notice mt-3" role="status">{notice}</p></div>}
-          {!backendConfigured && (
-            <div className="container">
-              <p className="backend-setup-notice" role="status">
-                <strong>Modo presentación / Vista previa.</strong> {supabaseSetupMessage}
-                <a
-                  href="https://github.com/BenitezAg/ProyectoLenguajes4#iniciar-el-proyecto"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Cómo conectarlo ↗
-                </a>
-              </p>
-            </div>
-          )}
           {storageError && <div className="container"><p className="alert alert-danger mt-3" role="alert">{storageError}</p></div>}
           <Hero />
           <TeamSection />
@@ -146,6 +161,7 @@ function Portfolio() {
           onClose={() => setAuthMode(null)}
           onLogin={login}
           onRegister={register}
+          backendConfigured={backendConfigured}
         />
       )}
       {selectedProject && (

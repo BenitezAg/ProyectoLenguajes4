@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(() =>
@@ -31,7 +31,7 @@ export function useSpeech() {
   const isSupported =
     typeof window !== "undefined" && "speechSynthesis" in window;
 
-  const speak = (text) => {
+  const speak = useCallback((text) => {
     if (!isSupported) return;
     window.speechSynthesis.cancel();
 
@@ -43,13 +43,13 @@ export function useSpeech() {
 
     setSpeaking(true);
     window.speechSynthesis.speak(utterance);
-  };
+  }, [isSupported]);
 
-  const stop = () => {
+  const stop = useCallback(() => {
     if (!isSupported) return;
     window.speechSynthesis.cancel();
     setSpeaking(false);
-  };
+  }, [isSupported]);
 
   return { speak, stop, speaking, isSupported };
 }
@@ -71,16 +71,21 @@ export async function shareContent({ title, text, url }) {
       if (error.name === "AbortError") return false;
     }
   }
-  return copyToClipboard(url || window.location.href);
+  const copied = await copyToClipboard(url || window.location.href);
+  if (!copied) {
+    throw new Error("No se pudo compartir ni copiar el enlace.");
+  }
+  return true;
 }
 
-export function toggleFullscreen(element) {
+export async function toggleFullscreen(element) {
   const el = element || document.documentElement;
   if (!document.fullscreenElement) {
-    if (el.requestFullscreen) return el.requestFullscreen();
-    if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+    if (el.requestFullscreen) return await el.requestFullscreen();
+    if (el.webkitRequestFullscreen) return await el.webkitRequestFullscreen();
   } else {
-    if (document.exitFullscreen) return document.exitFullscreen();
-    if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+    if (document.exitFullscreen) return await document.exitFullscreen();
+    if (document.webkitExitFullscreen) return await document.webkitExitFullscreen();
   }
+  throw new Error("La pantalla completa no está disponible en este navegador.");
 }
