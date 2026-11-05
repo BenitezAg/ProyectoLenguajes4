@@ -4,6 +4,43 @@ import { createId } from "../../utils/records.js";
 const PROJECT_COLORS = ["pink", "yellow", "cyan", "green", "purple", "blue"];
 const DEMO_KINDS = ["shop", "brand", "habits", "dashboard", "gallery", "arcade"];
 
+function isUrlField(field) {
+  return (
+    field.type === "url" ||
+    field.url === true ||
+    /(?:url|link|href)$/i.test(field.key)
+  );
+}
+
+function validateField(field, value) {
+  const text = String(value ?? "");
+  const trimmed = text.trim();
+  const minLength =
+    field.minLength ??
+    (field.multiline ? 5 : ["title", "name"].includes(field.key) ? 2 : undefined);
+
+  if (field.required && !trimmed) return "Este campo es obligatorio.";
+  if (minLength && trimmed.length < minLength) {
+    return `Debe tener al menos ${minLength} caracteres.`;
+  }
+  if (field.maxLength && text.length > field.maxLength) {
+    return `No puede superar los ${field.maxLength} caracteres.`;
+  }
+
+  if (isUrlField(field) && trimmed) {
+    try {
+      const url = new URL(trimmed);
+      if (!["http:", "https:"].includes(url.protocol) || !url.hostname) {
+        return "Ingresá una URL válida que use http:// o https://.";
+      }
+    } catch {
+      return "Ingresá una URL válida que use http:// o https://.";
+    }
+  }
+
+  return "";
+}
+
 export default function ContentCrud({
   kind,
   portfolio,
@@ -13,6 +50,7 @@ export default function ContentCrud({
 }) {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const collections = {
     projects: {
@@ -79,9 +117,19 @@ export default function ContentCrud({
   async function handleSave(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const formValues = Object.fromEntries(formData);
+    const nextFieldErrors = Object.fromEntries(
+      collection.fields
+        .map((field) => [field.key, validateField(field, formValues[field.key])])
+        .filter(([, message]) => message),
+    );
+    setFieldErrors(nextFieldErrors);
+    setError("");
+    if (Object.keys(nextFieldErrors).length) return;
+
     const itemData = {
       id: editing.id || createId(kind),
-      ...Object.fromEntries(formData),
+      ...formValues,
     };
 
     try {
@@ -89,6 +137,7 @@ export default function ContentCrud({
       setNotice(`Se guardó el ${collection.label} con éxito en Supabase.`);
       setEditingId(null);
       setError("");
+      setFieldErrors({});
     } catch (saveError) {
       console.error(`Error guardando ${collection.label}:`, saveError);
       setError("No se pudieron persistir los cambios en la base de datos.");
@@ -110,7 +159,7 @@ export default function ContentCrud({
 
   if (editing) {
     return (
-      <form className="admin-panel editor-panel" onSubmit={handleSave}>
+      <form className="admin-panel editor-panel" noValidate onSubmit={handleSave}>
         <div className="admin-panel-heading">
           <div>
             <span className="eyebrow">Gestión de contenido</span>
@@ -120,59 +169,97 @@ export default function ContentCrud({
             className="icon-button"
             type="button"
             aria-label="Cerrar edición"
-            onClick={() => { setEditingId(null); setError(""); }}
+            onClick={() => { setEditingId(null); setError(""); setFieldErrors({}); }}
           >
             ×
           </button>
         </div>
 
         <div className="editor-fields">
-          {collection.fields.map((field) => (
-            <label className="admin-field" key={field.key}>
-              <span>{field.label} {field.required && "*"}</span>
-              {field.options ? (
-                <select
-                  className="form-select"
-                  defaultValue={editing[field.key] || field.options[0] || ""}
-                  disabled={!field.options.length}
-                  name={field.key}
-                  required={field.required}
-                >
-                  {field.options.map((opt, i) => (
-                    <option key={opt} value={opt}>
-                      {field.optionLabels?.[i] ?? opt}
-                    </option>
-                  ))}
-                </select>
-              ) : field.multiline ? (
-                <textarea
-                  className="form-control"
-                  defaultValue={editing[field.key]}
-                  maxLength={field.maxLength}
-                  minLength={5}
-                  name={field.key}
-                  required={field.required}
-                  rows={3}
-                />
-              ) : (
-                <input
-                  className="form-control"
-                  defaultValue={editing[field.key]}
-                  maxLength={field.maxLength}
-                  minLength={field.key === "title" || field.key === "name" ? 2 : undefined}
-                  name={field.key}
-                  required={field.required}
-                />
-              )}
-            </label>
-          ))}
+          {collection.fields.map((field) => {
+            const fieldId = `content-${kind}-${field.key}`;
+            const errorId = `${fieldId}-error`;
+            const fieldError = fieldErrors[field.key];
+            const controlProps = {
+              id: fieldId,
+              "aria-describedby": fieldError ? errorId : undefined,
+              "aria-invalid": fieldError ? "true" : undefined,
+              onChange: (event) => {
+                if (!fieldErrors[field.key]) return;
+                const message = validateField(field, event.currentTarget.value);
+                setFieldErrors((current) => {
+                  if (message) return { ...current, [field.key]: message };
+                  const next = { ...current };
+                  delete next[field.key];
+                  return next;
+                });
+              },
+            };
+
+            return (
+              <div className="admin-field" key={field.key}>
+                <label htmlFor={fieldId}>
+                  {field.label} {field.required && "*"}
+                </label>
+                {field.options ? (
+                  <select
+                    className="form-select"
+                    defaultValue={editing[field.key] || field.options[0] || ""}
+                    disabled={!field.options.length}
+                    name={field.key}
+                    required={field.required}
+                    {...controlProps}
+                  >
+                    {field.options.map((opt, i) => (
+                      <option key={opt} value={opt}>
+                        {field.optionLabels?.[i] ?? opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : field.multiline ? (
+                  <textarea
+                    className="form-control"
+                    defaultValue={editing[field.key]}
+                    maxLength={field.maxLength}
+                    minLength={field.minLength ?? 5}
+                    name={field.key}
+                    required={field.required}
+                    rows={3}
+                    {...controlProps}
+                  />
+                ) : (
+                  <input
+                    className="form-control"
+                    defaultValue={editing[field.key]}
+                    maxLength={field.maxLength}
+                    minLength={field.minLength ?? (["title", "name"].includes(field.key) ? 2 : undefined)}
+                    name={field.key}
+                    required={field.required}
+                    type={isUrlField(field) ? "url" : "text"}
+                    {...controlProps}
+                  />
+                )}
+                {fieldError && (
+                  <span className="text-danger d-block" id={errorId} role="alert">
+                    {fieldError}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {error && <p className="alert alert-danger" role="alert">{error}</p>}
 
         <div className="d-flex flex-wrap gap-2 mt-3">
           <button className="btn btn-primary-custom" type="submit">Guardar cambios</button>
-          <button className="btn btn-ghost" type="button" onClick={() => setEditingId(null)}>Cancelar</button>
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => { setEditingId(null); setFieldErrors({}); }}
+          >
+            Cancelar
+          </button>
         </div>
       </form>
     );
@@ -189,7 +276,7 @@ export default function ContentCrud({
           className="btn btn-primary-custom btn-sm"
           type="button"
           disabled={kind === "demos" && portfolio.projects.length === 0}
-          onClick={() => setEditingId("nueva")}
+          onClick={() => { setFieldErrors({}); setEditingId("nueva"); }}
         >
           + Agregar {collection.label}
         </button>
@@ -220,7 +307,11 @@ export default function ContentCrud({
                   </span>
                 </div>
                 <div className="manage-actions">
-                  <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditingId(item.id)}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    type="button"
+                    onClick={() => { setFieldErrors({}); setEditingId(item.id); }}
+                  >
                     Editar
                   </button>
                   <button className="btn btn-danger-ghost btn-sm" type="button" onClick={() => handleDelete(item)}>
