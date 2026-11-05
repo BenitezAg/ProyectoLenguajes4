@@ -1844,3 +1844,148 @@ textarea:focus-visible {
     opacity: 1; transform: none;
   }
 }
+
+/* --- Estilos para el Pop-up (Modal) del Equipo --- */
+.team-modal-content {
+  position: relative;
+  width: min(900px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  animation: modal-enter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.team-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 0;
+}
+
+/* Imagen a la izquierda */
+.team-modal-image {
+  background: var(--surface-raised);
+  position: relative;
+  min-height: 300px;
+}
+
+.team-modal-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.team-modal-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+  font-family: var(--display);
+  color: var(--accent);
+  background: linear-gradient(135deg, rgba(226,255,0,0.05), rgba(226,255,0,0.1));
+}
+
+/* Información a la derecha */
+.team-modal-info {
+  padding: 40px;
+}
+
+.team-modal-info h2 {
+  margin: 5px 0 20px;
+  font-family: var(--display);
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.team-personal-data {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  margin-bottom: 20px;
+}
+
+.team-personal-data p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.team-personal-data strong {
+  color: var(--ink);
+}
+
+.team-modal-bio {
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+/* Barras de porcentaje */
+.skills-heading {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.team-skills-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.skill-bar-container {
+  width: 100%;
+}
+
+.skill-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.clickable-card:hover {
+  border-color: var(--accent);
+}
+
+/* Responsive del modal */
+@media (max-width: 768px) {
+  .team-modal-grid {
+    grid-template-columns: 1fr;
+  }
+  .team-modal-image {
+    height: 250px;
+    min-height: auto;
+  }
+  .team-modal-info {
+    padding: 25px;
+  }
+}
+
+/* --- Acomodar la cuadrícula del Equipo --- */
+.team-grid-container {
+  display: grid;
+  /* Crea columnas automáticas que no sean menores a 250px */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  width: 100%;
+  margin-top: 40px;
+}
+
+/* Asegurarnos de que la tarjeta se vea como un bloque */
+.clickable-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Para que todas las tarjetas midan lo mismo */
+}
