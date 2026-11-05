@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { build } from "esbuild";
@@ -14,6 +14,9 @@ try {
 }
 
 await mkdir(output, { recursive: true });
+await cp(path.join(root, "imagenes"), path.join(output, "imagenes"), {
+  recursive: true,
+});
 
 await build({
   entryPoints: [path.join(root, "src/main.jsx")],

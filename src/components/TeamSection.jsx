@@ -21,7 +21,19 @@ function MemberCard({ member, index }) {
     >
       <div className="team-card-header">
         <div className="team-avatar" aria-hidden="true">
-          <span>{member.avatar}</span>
+          {member.photo ? (
+            <img
+              src={member.photo}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={(event) => {
+                event.currentTarget.hidden = true;
+                event.currentTarget.nextElementSibling.hidden = false;
+              }}
+            />
+          ) : null}
+          <span hidden={Boolean(member.photo)}>{member.avatar}</span>
         </div>
         <div className="team-card-title-box">
           <h4 className="team-member-name">{member.name}</h4>

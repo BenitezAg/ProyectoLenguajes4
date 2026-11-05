@@ -1,4 +1,4 @@
-import { copyFile, mkdir } from "node:fs/promises";
+import { cp, copyFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { context } from "esbuild";
@@ -14,6 +14,9 @@ try {
 
 await mkdir(output, { recursive: true });
 await copyFile(path.join(root, "index.html"), path.join(output, "index.html"));
+await cp(path.join(root, "imagenes"), path.join(output, "imagenes"), {
+  recursive: true,
+});
 
 const server = await context({
   entryPoints: [path.join(root, "src/main.jsx")],

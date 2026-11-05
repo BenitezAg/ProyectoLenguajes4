@@ -23,6 +23,11 @@ test("lists the confirmed project team without invented personal details", () =>
     assert.deepEqual(member.skills, []);
   }
 
+  assert.equal(
+    teamMembers.find(({ id }) => id === "angel-gabriel-benitez").photo,
+    "./imagenes/fotos%20de%20integrantes/BenitezAngelGabriel.jpeg",
+  );
+
   for (const project of initialPortfolio.projects) {
     assert.equal(project.members, undefined);
   }

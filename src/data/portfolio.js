@@ -20,6 +20,7 @@ export const teamMembers = [
     name: "Angel Gabriel Benitez",
     role: "Integrante del equipo",
     avatar: "AB",
+    photo: "./imagenes/fotos%20de%20integrantes/BenitezAngelGabriel.jpeg",
     color: "yellow",
     bio: "Integrante del equipo de Lenguajes IV.",
     skills: [],
