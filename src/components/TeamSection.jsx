@@ -1,151 +1,124 @@
+import { useState } from "react";
 import { teamMembers, timeline, teamInfo } from "../data/portfolio.js";
 import { useSpeech } from "../utils/webApis.js";
 import Reveal from "./Reveal.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 
-function MemberCard({ member, index }) {
-  const { speak, stop, speaking, isSupported } = useSpeech();
-
-  const handleToggleSpeech = () => {
-    if (speaking) {
-      stop();
-    } else {
-      speak(`${member.name}. ${member.role}. ${member.bio}`);
-    }
-  };
+// --- COMPONENTE DEL MODAL (POP-UP) ---
+function TeamModal({ member, onClose }) {
+  if (!member) return null;
 
   return (
-    <Reveal
-      className={`team-card team-card-${member.color}`}
-      style={{ transitionDelay: `${index * 100}ms` }}
-    >
-      <div className="team-card-header">
-        <div className="team-avatar" aria-hidden="true">
-          {member.photo ? (
-            <img
-              src={member.photo}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              onError={(event) => {
-                event.currentTarget.hidden = true;
-                event.currentTarget.nextElementSibling.hidden = false;
-              }}
-            />
-          ) : null}
-          <span hidden={Boolean(member.photo)}>{member.avatar}</span>
-        </div>
-        <div className="team-card-title-box">
-          <h4 className="team-member-name">{member.name}</h4>
-          <span className="team-member-role">{member.role}</span>
+    <div className="modal-backdrop-custom" onClick={onClose}>
+      <div className="team-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Cerrar">
+          ✕
+        </button>
+        
+        <div className="team-modal-grid">
+          {/* Columna Izquierda: Foto Completa */}
+          <div className="team-modal-image">
+            {member.fullPhoto ? (
+              <img src={member.fullPhoto} alt={`Foto de ${member.name}`} />
+            ) : (
+              <div className="team-modal-placeholder">{member.avatar || member.name.charAt(0)}</div>
+            )}
+          </div>
+
+          {/* Columna Derecha: Datos Personales y Skills */}
+          <div className="team-modal-info">
+            <span className="eyebrow">{member.role}</span>
+            <h2>{member.name}</h2>
+            
+            <div className="team-personal-data">
+              <p><strong>Nivel de enseñanza:</strong> {member.education || "Estudiante Universitario"}</p>
+              <p><strong>Ubicación:</strong> {member.location || "Argentina"}</p>
+            </div>
+
+            <p className="team-modal-bio">{member.bio}</p>
+
+            <h4 className="skills-heading">Herramientas y Tecnologías</h4>
+            <div className="team-skills-bars">
+              {member.detailedSkills?.map((skill, i) => (
+                <div key={i} className="skill-bar-container">
+                  <div className="skill-bar-header">
+                    <span>{skill.name}</span>
+                    <span>{skill.percentage}%</span>
+                  </div>
+                  <div className="skill-track">
+                    <span 
+                      className="skill-fill" 
+                      style={{ width: `${skill.percentage}%` }}
+                    ></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Redes opcionales */}
+            <div className="team-social-links mt-4">
+              {member.github && <a href={member.github} target="_blank" rel="noreferrer" className="btn btn-outline-custom" style={{minHeight: '36px', fontSize: '0.8rem'}}>GitHub ↗</a>}
+              {member.linkedin && <a href={member.linkedin} target="_blank" rel="noreferrer" className="btn btn-outline-custom" style={{minHeight: '36px', fontSize: '0.8rem'}}>LinkedIn ↗</a>}
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
 
+// --- TARJETA DEL MIEMBRO (Clickable) ---
+function MemberCard({ member, index, onClick }) {
+  return (
+    <Reveal
+      className="card-base clickable-card"
+      style={{ transitionDelay: `${index * 100}ms`, cursor: "pointer" }}
+      onClick={() => onClick(member)}
+    >
+      <div className="team-avatar" aria-hidden="true">
+         {member.avatar || member.name.charAt(0)}
+      </div>
+      
+      <h4 className="team-member-name">{member.name}</h4>
+      <span className="team-member-role">{member.role}</span>
+      
       <p className="team-member-bio">{member.bio}</p>
 
-      {member.skills.length > 0 && (
-        <div className="team-skills-tags">
-          {member.skills.map((skill) => (
-            <span key={skill} className="team-skill-badge">
-              {skill}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="team-card-footer">
-        <div className="team-social-links">
-          {member.github && (
-            <a
-              href={member.github}
-              target="_blank"
-              rel="noreferrer"
-              className="team-link-icon"
-              title="GitHub"
-              aria-label={`GitHub de ${member.name}`}
-            >
-              GH ↗
-            </a>
-          )}
-          {member.linkedin && (
-            <a
-              href={member.linkedin}
-              target="_blank"
-              rel="noreferrer"
-              className="team-link-icon"
-              title="LinkedIn"
-              aria-label={`LinkedIn de ${member.name}`}
-            >
-              IN ↗
-            </a>
-          )}
-        </div>
-
-        <div className="team-actions">
-          {isSupported && <button
-            type="button"
-            className="btn-web-api"
-            onClick={handleToggleSpeech}
-            title={speaking ? "Detener voz" : "Escuchar perfil (Web Speech API)"}
-            aria-label={speaking ? "Detener narración" : `Escuchar perfil de ${member.name}`}
-          >
-            {speaking ? "⏹ Silenciar" : "🔊 Voz"}
-          </button>}
-        </div>
+      <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--line)', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: '500' }}>
+        Ver perfil completo →
       </div>
     </Reveal>
   );
 }
 
 export default function TeamSection() {
+  const [selectedMember, setSelectedMember] = useState(null);
+
   return (
-    <section id="equipo" className="section-padding team-section">
+    <section id="equipo" className="section-padding section-separator">
       <div className="container">
         <SectionHeading
-          eyebrow="Equipo Integrador · 4 Integrantes"
+          eyebrow="Equipo Integrador"
           title="Nuestro equipo."
           description={teamInfo.description}
         />
 
-        <div className="team-grid">
+        <div className="team-grid-container">
           {teamMembers.map((member, index) => (
-            <MemberCard key={member.id} member={member} index={index} />
+            <MemberCard 
+              key={member.id} 
+              member={member} 
+              index={index} 
+              onClick={setSelectedMember} 
+            />
           ))}
         </div>
-
-        <div className="team-trajectory mt-5">
-          <div className="row g-4 align-items-center">
-            <div className="col-lg-5">
-              <Reveal className="trajectory-highlight">
-                <span className="eyebrow">Metodología y sinergia</span>
-                <h3>Un portfolio construido en equipo</h3>
-                <p>
-                  Este espacio reúne la presentación del equipo y permite compartir
-                  proyectos y recibir consultas en un mismo lugar.
-                </p>
-                <a className="btn btn-outline-custom mt-2" href="#contacto">
-                  Contactar al equipo ↗
-                </a>
-              </Reveal>
-            </div>
-            <div className="col-lg-7">
-              <div className="timeline-list">
-                {timeline.map((item, index) => (
-                  <Reveal
-                    key={item.role}
-                    className="timeline-item"
-                    style={{ transitionDelay: `${index * 110}ms` }}
-                  >
-                    <span className="timeline-period">{item.period}</span>
-                    <h4>{item.role}</h4>
-                    <p>{item.detail}</p>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+
+      <TeamModal 
+        member={selectedMember} 
+        onClose={() => setSelectedMember(null)} 
+      />
     </section>
   );
 }
