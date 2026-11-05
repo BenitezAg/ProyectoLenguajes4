@@ -5,10 +5,17 @@ export default function AuthModal({
   onLogin,
   onRegister,
   backendConfigured,
+  backendReady,
   initialMode = "login",
 }) {
   const [mode, setMode] = useState(initialMode);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +36,7 @@ export default function AuthModal({
     setMode(nextMode);
     setError("");
     setNotice("");
-    setForm({ name: "", email: "", password: "" });
+    setForm({ firstName: "", lastName: "", phone: "", email: "", password: "" });
   }
 
   async function handleSubmit(event) {
@@ -90,7 +97,7 @@ export default function AuthModal({
         <p className="section-description">
           {mode === "register"
             ? "Crea tu cuenta gratuita para explorar los proyectos y sus experiencias interactivas."
-            : "Inicia sesión con tu cuenta segura de Supabase."}
+            : "Inicia sesión con tu cuenta para continuar."}
         </p>
         {!backendConfigured ? (
           <div className="auth-preview-notice">
@@ -99,6 +106,15 @@ export default function AuthModal({
             </p>
             <button className="btn btn-primary-custom w-100" type="button" onClick={onClose}>
               Volver a la vista previa
+            </button>
+          </div>
+        ) : !backendReady ? (
+          <div className="auth-preview-notice">
+            <p role="status">
+              El acceso y el registro estarán disponibles cuando la conexión con la base de datos se restablezca.
+            </p>
+            <button className="btn btn-primary-custom w-100" type="button" onClick={onClose}>
+              Volver al portfolio
             </button>
           </div>
         ) : (
@@ -111,11 +127,44 @@ export default function AuthModal({
                     autoComplete="name"
                     maxLength={70}
                     minLength={2}
-                    name="name"
+                    name="firstName"
                     required
-                    value={form.name}
-                    onChange={(event) => setForm({ ...form, name: event.target.value })}
+                    value={form.firstName}
+                    onChange={(event) => setForm({ ...form, firstName: event.target.value })}
                   />
+                </label>
+              )}
+              {mode === "register" && (
+                <label>
+                  Apellido
+                  <input
+                    autoComplete="family-name"
+                    maxLength={70}
+                    minLength={2}
+                    name="lastName"
+                    required
+                    value={form.lastName}
+                    onChange={(event) => setForm({ ...form, lastName: event.target.value })}
+                  />
+                </label>
+              )}
+              {mode === "register" && (
+                <label>
+                  Número de teléfono
+                  <input
+                    autoComplete="tel"
+                    inputMode="tel"
+                    maxLength={30}
+                    minLength={8}
+                    name="phone"
+                    pattern="[0-9+(). -]{8,30}"
+                    placeholder="+54 9 11 1234-5678"
+                    required
+                    type="tel"
+                    value={form.phone}
+                    onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                  />
+                  <span className="input-hint">Incluye el código de país; no compartiremos este dato públicamente.</span>
                 </label>
               )}
               {notice && <p className="alert alert-success mb-0" role="status">{notice}</p>}

@@ -10,9 +10,27 @@ const links = [
   ["Contacto", "#contacto"],
 ];
 
-export default function Navbar({ user, onLogin, onLogout, onOperator, onCustomerMessages }) {
+export default function Navbar({
+  user,
+  backendConfigured,
+  backendReady,
+  backendLoading,
+  adminUnreadCount = 0,
+  onLogin,
+  onLogout,
+  onOperator,
+  onCustomerMessages,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isOnline = useOnlineStatus();
+  const backendStatus = !backendConfigured
+    ? "Vista previa"
+    : backendLoading
+      ? "Conectando"
+      : backendReady
+        ? "Base conectada"
+        : "Base no disponible";
+  const backendStatusClass = backendReady ? "online" : "offline";
 
   return (
     <nav className="navbar navbar-expand-lg portfolio-nav" aria-label="Navegación principal">
@@ -30,11 +48,12 @@ export default function Navbar({ user, onLogin, onLogout, onOperator, onCustomer
 
         <div className="d-flex align-items-center gap-2 d-lg-none">
           <span
-            className={`online-badge ${isOnline ? "online" : "offline"}`}
-            title={isOnline ? "La conexión del dispositivo parece activa" : "Sin conexión de red"}
-            aria-label={isOnline ? "Conectado" : "Sin conexión"}
+            className={`online-badge ${backendStatusClass}`}
+            title={`${backendStatus}. ${isOnline ? "Con conexión de red." : "Sin conexión de red."}`}
+            aria-label={backendStatus}
           >
             <span className="dot" />
+            <span className="badge-text">{backendStatus}</span>
           </span>
           <button
             className="navbar-toggler nav-toggle"
@@ -78,6 +97,41 @@ export default function Navbar({ user, onLogin, onLogout, onOperator, onCustomer
                 </a>
               </li>
             )}
+            {user?.isOperator && (
+              <li className="nav-item">
+                <button
+                  className="admin-notification-button"
+                  type="button"
+                  aria-label={`Notificaciones: ${adminUnreadCount} consultas nuevas`}
+                  title="Abrir consultas nuevas"
+                  onClick={() => {
+                    onOperator(undefined, "consultas");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <svg
+                    className="admin-notification-icon"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span className="admin-notification-label">Notificaciones</span>
+                  {adminUnreadCount > 0 && (
+                    <span className="admin-notification-count" aria-hidden="true">
+                      {adminUnreadCount > 99 ? "99+" : adminUnreadCount}
+                    </span>
+                  )}
+                </button>
+              </li>
+            )}
             {user && !user.isOperator && (
               <li className="nav-item">
                 <a
@@ -96,11 +150,11 @@ export default function Navbar({ user, onLogin, onLogout, onOperator, onCustomer
 
             <li className="nav-item d-none d-lg-flex align-items-center">
               <span
-                className={`online-badge ${isOnline ? "online" : "offline"}`}
-                title={isOnline ? "La conexión del dispositivo parece activa" : "Sin conexión de red"}
+                className={`online-badge ${backendStatusClass}`}
+                title={`${backendStatus}. ${isOnline ? "Con conexión de red." : "Sin conexión de red."}`}
               >
                 <span className="dot" />
-                <span className="badge-text">{isOnline ? "Conectado" : "Sin conexión"}</span>
+                <span className="badge-text">{backendStatus}</span>
               </span>
             </li>
 

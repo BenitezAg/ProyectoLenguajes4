@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePortfolio } from "../context/PortfolioContext.jsx";
 import { teamInfo } from "../data/portfolio.js";
 import AnalyticsView from "./admin/AnalyticsView.jsx";
@@ -15,21 +15,41 @@ const TABS = [
   ["usuarios", "Usuarios", "◎"],
 ];
 
-export default function AdminDashboard({ onExit }) {
+export default function AdminDashboard({ onExit, initialTab = "resumen" }) {
   const {
     portfolio,
+    user,
     storageError,
     saveEntity,
     deleteEntity,
     setMessageStatus,
     replyToMessage,
+    refreshPortfolio,
+    loading,
+    updateUserProfile,
+    invitePortfolioUser,
+    deletePortfolioUser,
     setUserActive,
   } = usePortfolio();
 
-  const [tab, setTab] = useState("resumen");
+  const [tab, setTab] = useState(initialTab);
   const [notice, setNotice] = useState("");
 
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
   const pendingMessages = portfolio.messages.filter((m) => m.status === "nueva").length;
+
+  async function handleRefresh() {
+    try {
+      await refreshPortfolio();
+      setNotice("Bandejas y datos actualizados.");
+    } catch (error) {
+      console.error("No se pudo actualizar el panel administrativo.", error);
+      setNotice("No se pudo actualizar el panel. Comprueba la conexión e inténtalo otra vez.");
+    }
+  }
 
   return (
     <main id="operador" className="admin-page">
@@ -39,13 +59,46 @@ export default function AdminDashboard({ onExit }) {
             <a className="text-link admin-back-link" href="#inicio" onClick={onExit}>
               <span aria-hidden="true">←</span> Volver al portfolio público
             </a>
-            <span className="eyebrow">Panel de Operador · Supabase PostgreSQL</span>
-            <h1>Control y Gestión Integrador</h1>
+            <span className="eyebrow">Espacio privado · Administración</span>
+            <h1>Panel del equipo</h1>
             <p>
-              Administra contenidos, usuarios con acceso a demos, métricas de visitas y respuestas a consultas.
+              Gestiona consultas, cuentas y contenido desde un único lugar.
             </p>
           </div>
-          <span className="local-badge"><span /> Operador Autorizado (JWT verificado)</span>
+          <div className="admin-hero-actions">
+            <button
+              className="btn btn-outline-custom btn-sm"
+              type="button"
+              onClick={() => void handleRefresh()}
+              disabled={loading}
+            >
+              {loading ? "Actualizando…" : "↻ Actualizar"}
+            </button>
+            <button
+              className="btn btn-primary-custom btn-sm"
+              type="button"
+              onClick={() => { setTab("consultas"); setNotice(""); }}
+            >
+              <svg
+                className="admin-notification-icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Notificaciones
+              {pendingMessages > 0 && (
+                <span className="tab-count">{pendingMessages}</span>
+              )}
+            </button>
+          </div>
         </header>
 
         <nav className="admin-tabs" aria-label="Secciones del panel de administración">
@@ -102,12 +155,18 @@ export default function AdminDashboard({ onExit }) {
               portfolio={portfolio}
               setMessageStatus={setMessageStatus}
               replyToMessage={replyToMessage}
+              refreshPortfolio={refreshPortfolio}
+              loading={loading}
               setNotice={setNotice}
             />
           )}
           {tab === "usuarios" && (
             <UsersManager
               portfolio={portfolio}
+              currentUserId={user?.id}
+              updateUserProfile={updateUserProfile}
+              invitePortfolioUser={invitePortfolioUser}
+              deletePortfolioUser={deletePortfolioUser}
               setUserActive={setUserActive}
               setNotice={setNotice}
             />

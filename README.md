@@ -37,6 +37,7 @@ Los roles, correos y enlaces personales se pueden agregar cuando el equipo confi
 ### B. Navegación como Operador / Gestión del Sitio (Condiciones de Promoción)
 1. **CRUD Completo de Contenido:** Crear, editar, visualizar y eliminar Proyectos, Demos y Servicios desde el panel.
 2. **Registro de Usuarios Registrados:** Panel de control de usuarios con buscador por nombre/correo y conmutador para activar o desactivar su acceso a las demos.
+- El registro solicita nombre, apellido, teléfono, correo y contraseña. El teléfono se conserva en el perfil privado de Supabase y no se muestra en el portfolio público.
 3. **Métricas y Contadores de Visitas (Analytics):**
    * Contador de visitas generales (tráfico total del sitio).
    * Contador de visitas de usuarios autenticados.
@@ -91,10 +92,11 @@ npm run build
 4. Si ya ejecutaste la migración inicial manualmente desde el SQL Editor, vincula primero el proyecto con Supabase CLI y registra esa versión como aplicada para que no intente ejecutarla de nuevo:
    ```sh
    supabase link --project-ref <SUPABASE_PROJECT_ID>
-   supabase migration repair --status applied 20261031000000
+   supabase migration repair --status applied 20261105014451
    ```
 5. Al hacer push a `main` con cambios en `supabase/migrations/`, GitHub Actions aplicará las migraciones pendientes. También se puede iniciar manualmente desde **Actions → Aplicar migraciones de Supabase → Run workflow**. El workflow utiliza la CLI para aplicar migraciones versionadas con `supabase db push`.
-6. Para usar la base de datos localmente, copia `.env.example` a `.env` y reemplaza los valores de ejemplo por el **Project URL** y la **Publishable key** del proyecto Supabase. Si no están configurados, el sitio funciona en modo vista previa y el formulario de contacto permanece desactivado; no guarda mensajes localmente.
+   Para este proyecto, verifica que `20261105014451_initial_schema`, `20261105020000_message_conversations`, `20261105020100_hide_unverified_seed_content` y `20261105020200_user_profiles_and_public_access` aparezcan aplicadas. La última concede lectura pública únicamente de los servicios activos y agrega los campos de perfil; si queda pendiente, la consulta de servicios falla y el sitio bloquea el envío para no perder mensajes.
+6. Para usar la base de datos localmente, copia `.env.example` a `.env` y reemplaza los valores de ejemplo por el **Project URL** y la **Publishable key** del proyecto Supabase. Si faltan credenciales o no se pueden cargar los datos, el sitio permanece en modo vista previa y el formulario de contacto se desactiva; no guarda mensajes localmente.
    Las migraciones nuevas ocultan el contenido de ejemplo no confirmado. El equipo puede publicar proyectos y servicios reales desde el panel del operador.
 7. Para publicar el sitio con Supabase conectado, configura también los secretos `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` que consume el workflow de GitHub Pages. La clave pública se incluye en el frontend; nunca configures una `service_role` key como variable `VITE_*`.
 8. Para otorgar rol de operador a un email registrado, en **Authentication → Users → Edit user → App Metadata**, añade:
@@ -102,7 +104,8 @@ npm run build
    { "portfolio_role": "operator" }
    ```
    Al recargar el sitio, se desbloqueará el **Panel del operador**.
-9. Para recibir notificaciones y responder por correo, configura en **Supabase → Edge Functions → Secrets** `RESEND_API_KEY`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL` (remitente verificado en Resend) y `CONTACT_SITE_URL` (URL pública completa del portfolio). Después despliega `notify-contact` desde el proyecto. El almacenamiento y las conversaciones funcionan aunque la entrega de correo no esté configurada; en ese caso el equipo puede responder desde su bandeja del operador y el visitante conserva su enlace privado.
+9. Despliega las Edge Functions `notify-contact` y `manage-users` desde el proyecto Supabase. `manage-users` permite a un operador invitar y eliminar cuentas de clientes; las cuentas con rol de operador y la cuenta activa del propio administrador están protegidas. Configura `PORTFOLIO_SITE_URL` como secreto si quieres que las invitaciones regresen al sitio publicado. Para entregar invitaciones a correos externos, configura un proveedor SMTP en **Authentication → SMTP Settings**.
+10. Para recibir notificaciones y responder por correo, configura en **Supabase → Edge Functions → Secrets** `RESEND_API_KEY`, `CONTACT_EMAIL`, `CONTACT_FROM_EMAIL` (remitente verificado en Resend) y `CONTACT_SITE_URL` (URL pública completa del portfolio). El almacenamiento y las conversaciones funcionan aunque la entrega de correo no esté configurada; en ese caso el equipo puede responder desde su bandeja del operador y el visitante conserva su enlace privado.
 
 ---
 

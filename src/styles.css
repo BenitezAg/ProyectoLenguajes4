@@ -9,6 +9,21 @@
   font-family: var(--body); font-optical-sizing: auto; scroll-behavior: smooth;
   scroll-padding-top: 100px; background: var(--page);
 }
+.admin-hero-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.user-invite-form {
+  display: flex; flex-wrap: wrap; align-items: end; gap: 12px;
+  padding: 14px; border: 1px solid var(--line); border-radius: 10px;
+  background: rgb(255 255 255 / 2%);
+}
+.user-invite-form label {
+  display: grid; min-width: min(220px, 100%); flex: 1; gap: 6px;
+  color: var(--muted); font-size: .78rem;
+}
+.admin-hero-actions .tab-count {
+  background: rgb(16 14 25 / 15%); color: var(--accent-dark);
+}
 * {
   box-sizing: border-box;
 }
@@ -100,6 +115,24 @@ textarea:focus-visible {
 }
 .account-greeting {
   color: var(--muted); font-size: .84rem;
+}
+.admin-notification-button {
+  display: inline-flex; min-height: 36px; align-items: center; gap: 7px;
+  padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 7px;
+  background: rgb(255 255 255 / 2%); color: var(--ink); font-size: .76rem;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.admin-notification-button:hover {
+  border-color: rgb(214 255 98 / 45%); background: rgb(214 255 98 / 6%);
+  color: var(--accent);
+}
+.admin-notification-icon {
+  width: 16px; height: 16px; color: var(--accent);
+}
+.admin-notification-count {
+  min-width: 20px; padding: 1px 5px; border-radius: 99px;
+  background: var(--accent); color: var(--accent-dark);
+  font-size: .65rem; font-weight: 700; text-align: center;
 }
 .btn {
   font-weight: 550; letter-spacing: -.01em;
@@ -851,6 +884,9 @@ textarea:focus-visible {
 .admin-panel-heading h3 {
   margin: 0; font: 500 1.04rem var(--display);
 }
+.admin-inbox-summary {
+  margin: 6px 0 0; color: var(--muted); font-size: .74rem;
+}
 .admin-panel-heading .btn-primary-custom {
   min-height: 37px;
 }
@@ -999,6 +1035,17 @@ textarea:focus-visible {
 .manage-actions .btn {
   min-height: 34px; padding: 0 10px; font-size: .73rem;
 }
+.user-edit-form {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  width: min(100%, 560px);
+}
+.user-edit-form .form-control {
+  min-width: 160px; flex: 1; background: var(--surface-raised);
+  color: var(--ink); font-size: .76rem;
+}
+.user-edit-form .btn {
+  min-height: 32px; padding: 0 10px; font-size: .7rem;
+}
 .message-list {
   display: grid; gap: 11px;
 }
@@ -1022,6 +1069,29 @@ textarea:focus-visible {
 .message-email {
   display: inline-block; margin-top: 3px; color: var(--muted);
   font-size: .73rem;
+}
+.message-state-badge,
+.notification-state-badge {
+  display: inline-flex; align-items: center; margin: 8px 6px 0 0;
+  padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font-size: .65rem; text-transform: capitalize;
+}
+.message-state-nueva {
+  border-color: rgb(233 198 119 / 26%); background: rgb(233 198 119 / 6%);
+  color: #e9c677;
+}
+.message-state-en-curso {
+  border-color: rgb(169 161 255 / 24%); color: var(--lavender);
+}
+.message-state-respondida,
+.notification-state-sent {
+  border-color: rgb(138 224 174 / 24%); color: var(--success);
+}
+.notification-state-failed {
+  border-color: rgb(255 144 156 / 25%); color: var(--danger);
+}
+.notification-state-sending {
+  border-color: rgb(169 161 255 / 24%); color: var(--lavender);
 }
 .message-recipient {
   display: block; margin-top: 5px; color: var(--soft); font-size: .72rem;

@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { initialPortfolio } from "../data/portfolio.js";
+import { validateProfileDetails } from "../utils/profile.js";
 import {
   createId,
   normalizeMessageRecord,
@@ -25,10 +26,6 @@ const TABLES = {
 const MESSAGE_SELECT =
   "id, user_id, name, email, subject, message, recipient, status, notification_status, created_at, responded_at, portfolio_message_replies(id, author_id, author_role, body, created_at)";
 
-function getErrorMessage(error) {
-  return error instanceof Error ? error.message : "Error inesperado en Supabase.";
-}
-
 function throwOnError(result) {
   if (result.error) {
     throw new Error(result.error.message, { cause: result.error });
@@ -41,13 +38,21 @@ export function PortfolioProvider({ children }) {
   const [authUser, setAuthUser] = useState(null);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [storageError, setStorageError] = useState("");
+  const [backendReady, setBackendReady] = useState(false);
   const generation = useRef(0);
 
   const user = authUser
     ? {
         id: authUser.id,
-        name: authUser.user_metadata?.full_name ?? "Usuario",
+        name:
+          authUser.user_metadata?.full_name ??
+            ([authUser.user_metadata?.first_name, authUser.user_metadata?.last_name]
+              .filter(Boolean)
+              .join(" ") || "Usuario"),
         email: authUser.email ?? "",
+        firstName: authUser.user_metadata?.first_name ?? "",
+        lastName: authUser.user_metadata?.last_name ?? "",
+        phone: authUser.user_metadata?.phone ?? "",
         role: authUser.app_metadata?.portfolio_role ?? "user",
         isOperator: authUser.app_metadata?.portfolio_role === "operator",
       }
@@ -95,7 +100,7 @@ export function PortfolioProvider({ children }) {
           isOperator
             ? supabase
                 .from("portfolio_users")
-                .select("id, name, email, active, created_at")
+                .select("id, name, first_name, last_name, phone, email, active, created_at")
                 .order("created_at", { ascending: false })
             : Promise.resolve({ data: [], error: null }),
           isOperator
@@ -154,11 +159,13 @@ export function PortfolioProvider({ children }) {
           EMPTY_ANALYTICS(),
         ),
       });
+      setBackendReady(true);
     } catch (error) {
       console.error("No se pudieron cargar los datos de Supabase.", error);
       if (currentGeneration === generation.current) {
+        setBackendReady(false);
         setStorageError(
-          `No se pudieron cargar los datos del portfolio. Comprueba la configuración de Supabase y las migraciones: ${getErrorMessage(error)}`,
+          "No pudimos cargar todos los datos. El resto del portfolio sigue disponible.",
         );
       }
       throw error;
@@ -176,7 +183,9 @@ export function PortfolioProvider({ children }) {
       if (!active) return;
       if (error) {
         console.error("No se pudo restaurar la sesión de Supabase.", error);
-        setStorageError(`No se pudo restaurar la sesión: ${error.message}`);
+        setStorageError(
+          "No se pudo recuperar tu sesión. Actualiza la página e inténtalo de nuevo.",
+        );
         setLoading(false);
         return;
       }
@@ -204,12 +213,20 @@ export function PortfolioProvider({ children }) {
     }
   }, []);
 
-  const register = useCallback(async ({ name, email, password }) => {
+  const register = useCallback(async ({ firstName, lastName, phone, email, password }) => {
     requireBackend();
+    const profile = validateProfileDetails({ firstName, lastName, phone });
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { full_name: name.trim() } },
+      options: {
+        data: {
+          full_name: profile.fullName,
+          first_name: profile.firstName,
+          last_name: profile.lastName,
+          phone: profile.phone,
+        },
+      },
     });
     if (error) throw error;
     return { emailConfirmationRequired: !data.session };
@@ -233,8 +250,7 @@ export function PortfolioProvider({ children }) {
   const recordVisit = useCallback(async () => {
     requireBackend();
     throwOnError(await supabase.rpc("record_portfolio_visit"));
-    await refreshPortfolio();
-  }, [refreshPortfolio, requireBackend]);
+  }, [requireBackend]);
 
   const addMessage = useCallback(
     async ({ name, email, subject, message, recipient, guestAccessHash, guestAccessToken }) => {
@@ -410,12 +426,131 @@ export function PortfolioProvider({ children }) {
 
   const setUserActive = useCallback(async (id, active) => {
     requireBackend();
-    const { error } = await supabase
-      .from("portfolio_users")
-      .update({ active })
-      .eq("id", id);
+    const { data, error } = await supabase.functions.invoke("manage-users", {
+      body: { action: "set_active", userId: id, active },
+    });
     if (error) throw error;
-    await refreshPortfolio();
+    if (!data?.updated) throw new Error("No se pudo actualizar el estado de la cuenta.");
+    setPortfolio((current) => ({
+      ...current,
+      users: current.users.map((portfolioUser) =>
+        portfolioUser.id === id ? { ...portfolioUser, active } : portfolioUser,
+      ),
+    }));
+    try {
+      await refreshPortfolio();
+    } catch (refreshError) {
+      console.error("El acceso se actualizó, pero no se pudo actualizar la lista.", refreshError);
+    }
+  }, [refreshPortfolio, requireBackend]);
+
+  const updateUserProfile = useCallback(async (id, { firstName, lastName, phone }) => {
+    requireBackend();
+    const profile = validateProfileDetails(
+      { firstName, lastName, phone },
+      { requirePhone: false },
+    );
+    const { data, error } = await supabase.functions.invoke("manage-users", {
+      body: {
+        action: "update_profile",
+        userId: id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+      },
+    });
+    if (error) throw error;
+    if (!data?.updated) throw new Error("No se pudo actualizar el perfil.");
+    setPortfolio((current) => ({
+      ...current,
+      users: current.users.map((portfolioUser) =>
+        portfolioUser.id === id
+          ? {
+              ...portfolioUser,
+              name: profile.fullName,
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+              phone: profile.phone,
+            }
+          : portfolioUser,
+      ),
+    }));
+    setAuthUser((current) =>
+      current?.id === id
+        ? {
+            ...current,
+            user_metadata: {
+              ...current.user_metadata,
+              full_name: profile.fullName,
+              first_name: profile.firstName,
+              last_name: profile.lastName,
+              phone: profile.phone,
+            },
+          }
+        : current,
+    );
+    try {
+      await refreshPortfolio();
+    } catch (refreshError) {
+      console.error("El perfil se actualizó, pero no se pudo actualizar la lista.", refreshError);
+    }
+  }, [refreshPortfolio, requireBackend]);
+
+  const invitePortfolioUser = useCallback(async ({ firstName, lastName, phone, email }) => {
+    requireBackend();
+    const profile = validateProfileDetails({ firstName, lastName, phone });
+    const { data, error } = await supabase.functions.invoke("manage-users", {
+      body: {
+        action: "invite",
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+        email: email.trim().toLowerCase(),
+      },
+    });
+    if (error) throw error;
+    if (!data?.invited || typeof data.userId !== "string") {
+      throw new Error("No se pudo crear la invitación.");
+    }
+    setPortfolio((current) => ({
+      ...current,
+      users: [
+        {
+          id: data.userId,
+          name: profile.fullName,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          phone: profile.phone,
+          email: email.trim().toLowerCase(),
+          active: true,
+          createdAt: data.createdAt,
+        },
+        ...current.users,
+      ],
+    }));
+    try {
+      await refreshPortfolio();
+    } catch (refreshError) {
+      console.error("La invitación se creó, pero no se pudo actualizar la lista.", refreshError);
+    }
+  }, [refreshPortfolio, requireBackend]);
+
+  const deletePortfolioUser = useCallback(async (id) => {
+    requireBackend();
+    const { data, error } = await supabase.functions.invoke("manage-users", {
+      body: { action: "delete", userId: id },
+    });
+    if (error) throw error;
+    if (!data?.deleted) throw new Error("No se pudo eliminar la cuenta.");
+    setPortfolio((current) => ({
+      ...current,
+      users: current.users.filter((portfolioUser) => portfolioUser.id !== id),
+    }));
+    try {
+      await refreshPortfolio();
+    } catch (refreshError) {
+      console.error("La cuenta se eliminó, pero no se pudo actualizar la lista.", refreshError);
+    }
   }, [refreshPortfolio, requireBackend]);
 
   return (
@@ -425,6 +560,7 @@ export function PortfolioProvider({ children }) {
         user,
         loading,
         storageError,
+        backendReady,
         backendConfigured: supabaseIsConfigured,
         register,
         login,
@@ -437,6 +573,9 @@ export function PortfolioProvider({ children }) {
         replyToMessage,
         getGuestMessage,
         replyToGuestMessage,
+        updateUserProfile,
+        invitePortfolioUser,
+        deletePortfolioUser,
         setUserActive,
         refreshPortfolio,
       }}

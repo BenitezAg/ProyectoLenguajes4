@@ -7,6 +7,8 @@ export default function MessagesManager({
   portfolio,
   setMessageStatus,
   replyToMessage,
+  refreshPortfolio,
+  loading,
   setNotice,
 }) {
   const [statusFilter, setStatusFilter] = useState("todos");
@@ -14,6 +16,16 @@ export default function MessagesManager({
   const [search, setSearch] = useState("");
   const [drafts, setDrafts] = useState({});
   const [sendingId, setSendingId] = useState("");
+
+  async function handleRefresh() {
+    try {
+      await refreshPortfolio();
+      setNotice("Bandeja de consultas actualizada.");
+    } catch (error) {
+      console.error("No se pudo actualizar la bandeja de consultas.", error);
+      setNotice("No se pudo actualizar la bandeja. Comprueba la conexión e inténtalo otra vez.");
+    }
+  }
 
   const filtered = portfolio.messages.filter((msg) => {
     if (statusFilter !== "todos" && msg.status !== statusFilter) return false;
@@ -23,7 +35,11 @@ export default function MessagesManager({
       return (
         msg.name.toLowerCase().includes(q) ||
         msg.email.toLowerCase().includes(q) ||
-        msg.message.toLowerCase().includes(q)
+        msg.message.toLowerCase().includes(q) ||
+        msg.subject.toLowerCase().includes(q) ||
+        (msg.portfolioMessageReplies ?? []).some((reply) =>
+          reply.body.toLowerCase().includes(q),
+        )
       );
     }
     return true;
@@ -64,9 +80,24 @@ export default function MessagesManager({
     <article className="admin-panel">
       <div className="admin-panel-heading">
         <div>
-          <span className="eyebrow">Bandeja de entrada & Cotizaciones</span>
-          <h3>Consultas recibidas ({portfolio.messages.length})</h3>
+          <span className="eyebrow">Bandeja de entrada</span>
+          <h3>Mensajes y consultas</h3>
+          <p className="admin-inbox-summary">
+            {portfolio.messages.filter((message) => message.status === "nueva").length} nuevas
+            {" · "}
+            {portfolio.messages.filter((message) => message.status === "en curso").length} en seguimiento
+            {" · "}
+            {portfolio.messages.length} en total
+          </p>
         </div>
+        <button
+          className="btn btn-outline-custom btn-sm"
+          type="button"
+          onClick={() => void handleRefresh()}
+          disabled={loading}
+        >
+          {loading ? "Actualizando…" : "↻ Actualizar bandeja"}
+        </button>
       </div>
 
       {/* Filtros parametrizados y búsqueda */}
@@ -131,6 +162,17 @@ export default function MessagesManager({
               <a className="message-email" href={`mailto:${msg.email}`}>
                 {msg.email}
               </a>
+              <span className={`message-state-badge message-state-${msg.status.replace(" ", "-")}`}>
+                {msg.status}
+              </span>
+              <span className={`notification-state-badge notification-state-${msg.notificationStatus ?? "pending"}`}>
+                Aviso: {{
+                  sent: "correo enviado",
+                  failed: "correo no enviado",
+                  sending: "enviando",
+                  pending: "pendiente",
+                }[msg.notificationStatus ?? "pending"]}
+              </span>
               {msg.recipient && msg.recipient !== "all" && (
                 <span className="message-recipient">
                   Destinatario: {teamMembers.find((member) => member.id === msg.recipient)?.name ?? "Equipo"}

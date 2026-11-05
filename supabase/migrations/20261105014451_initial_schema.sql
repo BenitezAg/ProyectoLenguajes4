@@ -12,6 +12,14 @@ as $$
   select coalesce(auth.jwt() -> 'app_metadata' ->> 'portfolio_role', '') = 'operator';
 $$;
 
+create table public.portfolio_users (
+  id uuid primary key references auth.users (id) on delete cascade,
+  name text not null check (char_length(btrim(name)) between 2 and 70),
+  email text not null unique check (char_length(email) <= 254),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
 create or replace function private.is_active_portfolio_user()
 returns boolean
 language sql
@@ -27,14 +35,6 @@ as $$
         and active
     );
 $$;
-
-create table public.portfolio_users (
-  id uuid primary key references auth.users (id) on delete cascade,
-  name text not null check (char_length(btrim(name)) between 2 and 70),
-  email text not null unique check (char_length(email) <= 254),
-  active boolean not null default true,
-  created_at timestamptz not null default now()
-);
 
 create table public.portfolio_projects (
   id text primary key check (char_length(id) between 1 and 100),
@@ -111,7 +111,6 @@ grant usage on schema private to authenticated;
 grant execute on function private.is_portfolio_operator() to authenticated;
 grant execute on function private.is_active_portfolio_user() to authenticated;
 revoke all on function public.create_portfolio_user() from public, anon, authenticated;
-revoke all on function public.update_portfolio_timestamp() from public, anon, authenticated;
 
 create or replace function public.get_public_project_previews()
 returns table (id text, title text, category text, emoji text, color text)
@@ -156,6 +155,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function public.update_portfolio_timestamp() from public, anon, authenticated;
 
 create trigger on_portfolio_user_created
   after insert on auth.users

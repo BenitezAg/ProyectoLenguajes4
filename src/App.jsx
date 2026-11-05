@@ -32,11 +32,14 @@ function Portfolio() {
     loading,
     storageError,
     backendConfigured,
+    backendReady,
     recordVisit,
+    refreshPortfolio,
   } = usePortfolio();
   const [page, setPage] = useState(getPageFromHash);
   const [guestAccessToken, setGuestAccessToken] = useState(getGuestAccessToken);
   const [authMode, setAuthMode] = useState(null);
+  const [adminInitialTab, setAdminInitialTab] = useState("resumen");
   const [selectedProject, setSelectedProject] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [notice, setNotice] = useState("");
@@ -51,18 +54,17 @@ function Portfolio() {
 
     void recordVisit().catch(() => {
       recordedVisits.current.delete(visitKey);
-      setNotice(
-        "No se pudo registrar la visita en Supabase. Revisa las políticas y la migración.",
-      );
+      setNotice("No se pudo registrar la visita, pero puedes continuar usando el portfolio.");
     });
   }, [backendConfigured, loading, user?.id, recordVisit]);
 
-  const openAdmin = useCallback((event) => {
+  const openAdmin = useCallback((event, initialTab = "resumen") => {
     if (!user?.isOperator) {
       event?.preventDefault();
       setNotice("El panel de gestión requiere una cuenta de operador autorizada en Supabase.");
       return;
     }
+    setAdminInitialTab(initialTab);
     setPage("operator");
     setNotice("");
   }, [user?.isOperator]);
@@ -124,6 +126,14 @@ function Portfolio() {
       </div>
       <Navbar
         user={user}
+        backendConfigured={backendConfigured}
+        backendReady={backendReady}
+        backendLoading={loading}
+        adminUnreadCount={
+          user?.isOperator
+            ? portfolio.messages.filter((message) => message.status === "nueva").length
+            : 0
+        }
         onLogin={() => setAuthMode("login")}
         onLogout={() => void logout().catch((error) => {
           console.error("No se pudo cerrar la sesión.", error);
@@ -133,7 +143,7 @@ function Portfolio() {
         onCustomerMessages={openCustomerInbox}
       />
       {operatorPage ? (
-        <AdminDashboard onExit={closeAdmin} />
+        <AdminDashboard onExit={closeAdmin} initialTab={adminInitialTab} />
       ) : customerInboxPage ? (
         <CustomerInbox onExit={closeInbox} />
       ) : guestInboxPage ? (
@@ -141,7 +151,20 @@ function Portfolio() {
       ) : (
         <main aria-busy={loading}>
           {notice && <div className="container"><p className="admin-notice mt-3" role="status">{notice}</p></div>}
-          {storageError && <div className="container"><p className="alert alert-danger mt-3" role="alert">{storageError}</p></div>}
+          {storageError && (
+            <div className="container">
+              <p className="alert alert-warning mt-3" role="alert">
+                {storageError}{" "}
+                <button
+                  className="btn btn-link p-0 align-baseline"
+                  type="button"
+                  onClick={() => void refreshPortfolio().catch(() => {})}
+                >
+                  Reintentar
+                </button>
+              </p>
+            </div>
+          )}
           <Hero />
           <TeamSection />
           <ServicesSection />
@@ -162,6 +185,7 @@ function Portfolio() {
           onLogin={login}
           onRegister={register}
           backendConfigured={backendConfigured}
+          backendReady={backendReady}
         />
       )}
       {selectedProject && (

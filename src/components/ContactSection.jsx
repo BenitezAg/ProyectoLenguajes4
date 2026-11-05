@@ -22,7 +22,7 @@ const SUBJECT_OPTIONS = [
 ];
 
 export default function ContactSection({ user }) {
-  const { addMessage, loading, backendConfigured } = usePortfolio();
+  const { addMessage, loading, backendConfigured, backendReady } = usePortfolio();
   const [form, setForm] = useState(() => ({
     ...initialForm,
     name: user?.name ?? "",
@@ -94,7 +94,7 @@ export default function ContactSection({ user }) {
     }
   }
 
-  const disabled = loading || sending || !backendConfigured;
+  const disabled = loading || sending || !backendConfigured || !backendReady;
 
   return (
     <section id="contacto" className="section-padding contact-section">
@@ -127,9 +127,19 @@ export default function ContactSection({ user }) {
                   La vista previa está disponible. El formulario se habilitará cuando la base de datos del proyecto esté conectada.
                 </p>
               )}
-              {backendConfigured && (
+              {backendConfigured && backendReady && !loading && (
                 <p className="contact-guest-note">
                   Puedes enviar una consulta sin crear una cuenta. Te daremos un enlace privado para seguir la conversación.
+                </p>
+              )}
+              {backendConfigured && loading && (
+                <p className="contact-guest-note" role="status">
+                  Comprobando la disponibilidad del formulario…
+                </p>
+              )}
+              {backendConfigured && !loading && !backendReady && (
+                <p className="alert alert-warning" role="status">
+                  No podemos recibir consultas en este momento. Inténtalo más tarde.
                 </p>
               )}
               <form className="contact-form" onSubmit={handleSubmit}>
