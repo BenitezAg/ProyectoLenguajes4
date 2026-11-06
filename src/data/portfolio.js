@@ -89,9 +89,59 @@ export const owner = {
 };
 
 export const initialPortfolio = {
-  projects: [],
+  projects: [
+    {
+      id: "Pagina Web de Productos de Computacion",
+      category: "web",
+      title: "ZonaHardware",
+      description: "Plataforma web full-stack desarrollada para la venta de productos de computacion",
+      tech: "React 19, Supabase, Bootstrap 5",
+      // 👇 NUEVOS CAMPOS 👇
+      url: "https://flitz.vercel.app", 
+      image: "./imagenes/web/Zonahardware.png" // Guarda una captura de tu web en esta ruta
+    },
+    {
+      id: "app-mapas",
+      category: "app",
+      title: "Geolocalización Interactiva",
+      description: "Aplicación de mapas que utiliza la API de Leaflet para trazar ubicaciones en tiempo real.",
+      tech: "Vite, Leaflet, JavaScript",
+      // 👇 NUEVOS CAMPOS 👇
+      url: "https://abelvillafane1173.github.io/TP2-Lenguajes-4/",
+      image: "./imagenes/web/mapa.png" 
+    },
+    {
+      id: "backend-api",
+      category: "web",
+      title: "API Rest y Gestión de Datos",
+      description: "Diseño e implementación de lógica de servidor y operaciones CRUD estructuradas.",
+      tech: "Java, SQL, PostgreSQL",
+      // 👇 NUEVOS CAMPOS 👇
+      url: "https://openbrewerydb.org",
+      image: "./imagenes/web/api.png" 
+    }
+  ],
   demos: [],
-  services: [],
+  services: [
+    {
+      id: "frontend",
+      icon: "💻",
+      title: "Desarrollo Frontend",
+      description: "Creación de interfaces de usuario dinámicas, accesibles y optimizadas para cualquier dispositivo utilizando React y CSS moderno."
+    },
+    {
+      id: "backend-db",
+      icon: "🗄️",
+      title: "Backend & Bases de Datos",
+      description: "Modelado de datos, creación de consultas complejas en SQL y configuración de reglas de seguridad (RLS) en servidores."
+    },
+    {
+      id: "analisis",
+      icon: "⚙️",
+      title: "Análisis y Arquitectura",
+      description: "Levantamiento de requerimientos, diseño de flujos de trabajo y aplicación de metodologías ágiles para asegurar la calidad del software."
+    }
+  ],
   users: [],
   messages: [],
   analytics: { visits: 0, registeredVisits: 0, dailyVisits: [] },
