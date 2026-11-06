@@ -9,39 +9,77 @@ export const teamMembers = [
   {
     id: "santiago-daniel-acuna",
     name: "Santiago Daniel Acuña",
-    role: "Integrante del equipo",
     avatar: "SA",
-    color: "pink",
+    photo: "./imagenes/fotos%20de%20integrantes/Chanti.jpeg",
+    color: "white",
     bio: "Integrante del equipo de Lenguajes IV.",
     skills: [],
+    // Nuevos campos para el pop-up
+    education: "Estudiante de Ingenieria en Informatica",
+    location: "Salta, Argentina",
+    fullPhoto: "./imagenes/fotos%20de%20integrantes/Santi.jpeg", 
+    detailedSkills: [
+      { name: "HTML / CSS", percentage: 95 },
+      { name: "JavaScript", percentage: 85 },
+      { name: "React", percentage: 80 }
+    ]
   },
   {
     id: "angel-gabriel-benitez",
     name: "Angel Gabriel Benitez",
-    role: "Integrante del equipo",
     avatar: "AB",
-    photo: "./imagenes/fotos%20de%20integrantes/BenitezAngelGabriel.jpeg",
+    photo: "./imagenes/fotos%20de%20integrantes/Angel.jpeg",
     color: "yellow",
     bio: "Integrante del equipo de Lenguajes IV.",
     skills: [],
+    // Nuevos campos para el pop-up
+    education: "Estudiante de Ingenieria en Informatica",
+    location: "Salta, Argentina",
+    fullPhoto: "./imagenes/fotos%20de%20integrantes/BenitezAngelGabriel.jpeg", // Reutilizamos su foto para el pop-up
+    detailedSkills: [
+      { name: "Java", percentage: 75 },
+      { name: "SQL", percentage: 80 },
+      { name: "Bases de Datos", percentage: 95 }
+    ]
   },
   {
     id: "abel-villafane",
     name: "Abel Villafañe",
-    role: "Integrante del equipo",
     avatar: "AV",
+    photo: "./imagenes/fotos%20de%20integrantes/VillafañeAbel.jpg",
     color: "cyan",
     bio: "Integrante del equipo de Lenguajes IV.",
-    skills: [],
+    skills: [ { name: "Java", percentage: 90 },
+      { name: "SQL", percentage: 80 },
+      { name: "Bases de Datos", percentage: 60 }
+    ],
+    // Nuevos campos para el pop-up
+    education: "Estudiante de Ingenieria en Informatica",
+    location: "Salta, Argentina",
+    fullPhoto: "./imagenes/fotos%20de%20integrantes/VillafañeAbel.jpg",
+    detailedSkills: [
+      { name: "Vite / Leaflet API", percentage: 80 },
+      { name: "Lógica y Algoritmos", percentage: 60 },
+      { name: "HTML / CSS", percentage: 90 }
+    ]
   },
   {
     id: "wilson-lopez",
     name: "Wilson Lopez",
-    role: "Integrante del equipo",
     avatar: "WL",
+    photo: "./imagenes/fotos%20de%20integrantes/Wilson.jpeg",
     color: "green",
     bio: "Integrante del equipo de Lenguajes IV.",
     skills: [],
+    // Nuevos campos para el pop-up
+    education: "Estudiante de Ingenieria en Informatica",
+    location: "Salta, Argentina",
+    fullPhoto: "./imagenes/fotos%20de%20integrantes/Wilson.jpeg",
+    detailedSkills: [
+      { name: "React", percentage: 85 },
+      { name: "JavaScript", percentage: 80 },
+      { name: "Diseño UI/UX", percentage: 75 }
+    ]
   },
 ];
 
