@@ -76,7 +76,16 @@ function MemberCard({ member, index, onClick }) {
       onClick={() => onClick(member)}
     >
       <div className="team-avatar" aria-hidden="true">
-         {member.avatar || member.name.charAt(0)}
+        {/* Aquí detecta si hay foto, sino muestra las iniciales */}
+        {member.photo ? (
+          <img 
+            src={member.photo} 
+            alt={member.name} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
+          />
+        ) : (
+          member.avatar || member.name.charAt(0)
+        )}
       </div>
       
       <h4 className="team-member-name">{member.name}</h4>
@@ -90,7 +99,6 @@ function MemberCard({ member, index, onClick }) {
     </Reveal>
   );
 }
-
 export default function TeamSection() {
   const [selectedMember, setSelectedMember] = useState(null);
 
