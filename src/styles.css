@@ -1989,3 +1989,40 @@ textarea:focus-visible {
   flex-direction: column;
   height: 100%; /* Para que todas las tarjetas midan lo mismo */
 }
+
+/* --- Estilos para la previsualización del Proyecto --- */
+.project-card {
+  padding: 0 !important; /* Quitamos el padding para que la foto toque los bordes */
+  display: flex;
+  flex-direction: column;
+}
+
+.project-preview {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+.project-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+/* Efecto zoom suave en la foto al pasar el mouse */
+.project-card:hover .project-preview img {
+  transform: scale(1.05);
+}
+
+.project-card-content {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.project-description {
+  margin-bottom: 15px; /* Da espacio antes de la flecha */
+}
